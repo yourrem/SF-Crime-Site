@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Database
+*.db
+*.sqlite
+
+# Raw data (API responses can be large)
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
