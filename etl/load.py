@@ -6,9 +6,15 @@ import pandas as pd
 DB_PATH = Path(__file__).parent.parent / "data" / "sfcrime.db"
 
 
+def _drop_dict_columns(df: pd.DataFrame) -> pd.DataFrame:
+    dict_cols = [c for c in df.columns if df[c].apply(lambda x: isinstance(x, dict)).any()]
+    if dict_cols:
+        print(f"  Dropping dict-valued columns (unsupported by SQLite): {dict_cols}")
+    return df.drop(columns=dict_cols)
+
+
 def load(df: pd.DataFrame, table: str = "incidents") -> None:
-    # SQLite can't store dict-valued columns — drop 'point' since lat/long already capture it
-    df = df.drop(columns=["point"], errors="ignore")
+    df = _drop_dict_columns(df)
 
     with sqlite3.connect(DB_PATH) as conn:
         df.to_sql(table, conn, if_exists="replace", index=False)
@@ -18,20 +24,31 @@ def load(df: pd.DataFrame, table: str = "incidents") -> None:
 
 def upsert(df: pd.DataFrame, table: str, unique_key: str) -> None:
     """Insert only rows that don't already exist, matched on unique_key."""
-    df = df.drop(columns=["point"], errors="ignore")
+    df = _drop_dict_columns(df)
 
     temp = f"_{table}_staging"
     with sqlite3.connect(DB_PATH) as conn:
-        # Write new records to a staging table
-        df.to_sql(temp, conn, if_exists="replace", index=False)
+        table_exists = conn.execute(
+            f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table}'"
+        ).fetchone()
 
-        # Insert rows from staging that aren't already in the main table
-        conn.execute(f"""
-            INSERT OR IGNORE INTO {table}
-            SELECT * FROM {temp}
-            WHERE {unique_key} NOT IN (SELECT {unique_key} FROM {table})
-        """)
-        conn.execute(f"DROP TABLE {temp}")
+        # First run — no table yet, just load directly
+        if not table_exists:
+            df.to_sql(table, conn, if_exists="replace", index=False)
+        else:
+            df.to_sql(temp, conn, if_exists="replace", index=False)
+
+            # Use only columns that exist in both tables to avoid mismatch errors
+            existing_cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+            shared_cols = [c for c in df.columns if c in existing_cols]
+            cols_sql = ", ".join(shared_cols)
+
+            conn.execute(f"""
+                INSERT OR IGNORE INTO {table} ({cols_sql})
+                SELECT {cols_sql} FROM {temp}
+                WHERE {unique_key} NOT IN (SELECT {unique_key} FROM {table})
+            """)
+            conn.execute(f"DROP TABLE {temp}")
 
         count = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
         print(f"Upsert complete — {table} now has {count} rows")

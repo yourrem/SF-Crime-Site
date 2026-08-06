@@ -35,6 +35,34 @@ def fetch_incidents(days=7):
     return all_records
 
 
+CALLS_ENDPOINT = "https://data.sfgov.org/resource/gnap-fj3t.json"
+
+
+def fetch_calls(hours=2):
+    since = (datetime.now() - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%S")
+    headers = {"X-App-Token": TOKEN}
+    all_records = []
+    offset = 0
+
+    while True:
+        params = {
+            "$where": f"received_datetime >= '{since}'",
+            "$limit": PAGE_SIZE,
+            "$offset": offset,
+            "$order": "received_datetime DESC",
+        }
+        response = requests.get(CALLS_ENDPOINT, headers=headers, params=params)
+        response.raise_for_status()
+        batch = response.json()
+        if not batch:
+            break
+        all_records.extend(batch)
+        offset += PAGE_SIZE
+        print(f"  Fetched {len(all_records)} call records so far...")
+
+    return all_records
+
+
 if __name__ == "__main__":
     print("Pulling last 7 days of incident reports...")
     data = fetch_incidents(days=7)

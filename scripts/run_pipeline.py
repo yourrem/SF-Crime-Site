@@ -4,12 +4,14 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 import pandas as pd
-from etl.extract import fetch_incidents
+from etl.extract import fetch_incidents, fetch_calls
 from etl.transform import clean
-from etl.load import load
+from etl.load import load, upsert
 
 
-def run(days: int = 7) -> None:
+def run_incidents(days: int = 7) -> None:
+    print("=== Daily Incidents Pipeline ===")
+
     print("--- Extract ---")
     raw = fetch_incidents(days=days)
     print(f"Fetched {len(raw)} raw records")
@@ -23,8 +25,25 @@ def run(days: int = 7) -> None:
     print("\n--- Load ---")
     load(df_clean)
 
-    print("\nPipeline complete.")
+
+def run_calls(hours: int = 2) -> None:
+    print("=== Real-time Calls Pipeline ===")
+
+    print("--- Extract ---")
+    raw = fetch_calls(hours=hours)
+    print(f"Fetched {len(raw)} raw records")
+
+    print("\n--- Transform ---")
+    df = pd.DataFrame(raw)
+    df_clean = clean(df)
+    print(f"Cleaned shape: {df_clean.shape}")
+
+    print("\n--- Upsert ---")
+    upsert(df_clean, table="calls", unique_key="cad_number")
 
 
 if __name__ == "__main__":
-    run()
+    run_incidents()
+    print()
+    run_calls()
+    print("\nAll pipelines complete.")
