@@ -19,5 +19,8 @@ venv/
 # Notebooks checkpoints
 .ipynb_checkpoints/
 
+# Logs
+logs/*.log
+
 # OS
 .DS_Store
