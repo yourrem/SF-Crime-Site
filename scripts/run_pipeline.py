@@ -9,12 +9,16 @@ from etl.transform import clean_incidents
 from etl.load import load, upsert
 
 
-def run_incidents(days: int = 7) -> None:
+def run_incidents(days: int = 2) -> None:
     print("=== Daily Incidents Pipeline ===")
 
     print("--- Extract ---")
     raw = fetch_incidents(days=days)
     print(f"Fetched {len(raw)} raw records")
+
+    if not raw:
+        print("No new records — skipping load.")
+        return
 
     print("\n--- Transform ---")
     df = pd.DataFrame(raw)
@@ -22,8 +26,8 @@ def run_incidents(days: int = 7) -> None:
     print(f"Cleaned shape: {df_clean.shape}")
     print(f"Rows missing location: {(~df_clean['has_location']).sum()}")
 
-    print("\n--- Load ---")
-    load(df_clean)
+    print("\n--- Upsert ---")
+    upsert(df_clean, table="incidents", unique_key="row_id")
 
 
 def run_calls(hours: int = 2) -> None:
