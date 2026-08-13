@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: public
+    database: sfcrime
+    schema: public
+    tables:
+      - name: incidents
+        description: Raw SF incident reports loaded by the ETL pipeline
+        columns:
+          - name: row_id
+            description: Unique identifier for each incident row
+            tests:
+              - not_null
+          - name: incident_date
+            tests:
+              - not_null

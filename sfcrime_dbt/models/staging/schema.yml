@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: stg_incidents
+    description: Cleaned and deduplicated view of raw SF incident reports
+    columns:
+      - name: row_id
+        description: Unique identifier per incident
+        tests:
+          - unique
+          - not_null
+      - name: incident_date
+        tests:
+          - not_null
