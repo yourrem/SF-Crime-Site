@@ -258,9 +258,6 @@
         maxZoom: 18
     }).addTo(map);
 
-    // SF police district boundaries + crime counts
-    const GEO_URL = 'https://data.sfgov.org/api/geospatial/wkhw-cjsf?method=export&type=GeoJSON';
-
     function getColor(count, max) {
         const t = count / max;
         if (t > 0.8) return '#67000d';
@@ -271,35 +268,30 @@
         return '#fdd49e';
     }
 
-    Promise.all([
-        fetch(GEO_URL).then(r => r.json()),
-        fetch('/api/districts').then(r => r.json())
-    ]).then(([geo, counts]) => {
-        const max = Math.max(...Object.values(counts));
+    fetch('/api/districts')
+        .then(r => r.json())
+        .then(geo => {
+            const totals = geo.features.map(f => f.properties.total);
+            const max = Math.max(...totals);
 
-        const layer = L.geoJSON(geo, {
-            style: feature => {
-                const name = (feature.properties.district || '').toUpperCase();
-                const count = counts[name] || 0;
-                return {
-                    fillColor: getColor(count, max),
+            const layer = L.geoJSON(geo, {
+                style: feature => ({
+                    fillColor: getColor(feature.properties.total, max),
                     fillOpacity: 0.7,
                     color: '#fff',
                     weight: 2
-                };
-            },
-            onEachFeature: (feature, layer) => {
-                const name = feature.properties.district || 'Unknown';
-                const count = counts[name.toUpperCase()] || 0;
-                layer.bindTooltip(
-                    `<strong>${name}</strong><br>${count.toLocaleString()} incidents`,
-                    { sticky: true }
-                );
-            }
-        }).addTo(map);
+                }),
+                onEachFeature: (feature, layer) => {
+                    const { district, total } = feature.properties;
+                    layer.bindTooltip(
+                        `<strong>${district}</strong><br>${total.toLocaleString()} incidents`,
+                        { sticky: true }
+                    );
+                }
+            }).addTo(map);
 
-        map.fitBounds(layer.getBounds());
-    });
+            map.fitBounds(layer.getBounds());
+        });
 </script>
 
 </body>
