@@ -45,7 +45,13 @@ select
 
     -- metadata
     data_as_of,
-    data_loaded_at
+    data_loaded_at,
+
+    -- data quality flags
+    resolution = 'Unfounded'                                        as is_unfounded,
+    incident_category = 'Non-Criminal'                              as is_non_criminal,
+    (latitude between 37.70 and 37.85
+     and longitude between -122.55 and -122.35)                     as is_valid_location
 
 from deduped
 where rn = 1

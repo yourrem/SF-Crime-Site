@@ -3,6 +3,9 @@ with daily as (
         incident_date,
         count(*) as incident_count
     from {{ ref('stg_incidents') }}
+    where not is_unfounded
+      and not is_non_criminal
+      and is_valid_location
     group by incident_date
 )
 

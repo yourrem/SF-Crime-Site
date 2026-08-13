@@ -12,3 +12,9 @@ models:
       - name: incident_date
         tests:
           - not_null
+      - name: is_unfounded
+        description: True if officially confirmed as false/misreported (resolution = Unfounded)
+      - name: is_non_criminal
+        description: True if categorised as Non-Criminal — administrative records, not crimes
+      - name: is_valid_location
+        description: True if lat/long falls within SF bounding box (geocoding sanity check)

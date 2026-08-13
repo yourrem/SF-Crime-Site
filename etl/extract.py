@@ -25,6 +25,16 @@ def fetch_incidents(days=7, start_date=None, end_date=None):
 
     while True:
         params = {
+            "$select": (
+                "row_id,incident_id,incident_number,cad_number,"
+                "incident_datetime,incident_date,incident_time,incident_year,"
+                "incident_day_of_week,report_datetime,"
+                "incident_category,incident_subcategory,incident_code,"
+                "incident_description,report_type_code,report_type_description,"
+                "resolution,police_district,analysis_neighborhood,"
+                "supervisor_district,intersection,latitude,longitude,"
+                "data_as_of,data_loaded_at"
+            ),
             "$where": where,
             "$limit": PAGE_SIZE,
             "$offset": offset,

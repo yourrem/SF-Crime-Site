@@ -1,6 +1,9 @@
 with base as (
     select * from {{ ref('stg_incidents') }}
     where incident_category is not null
+      and not is_unfounded
+      and not is_non_criminal
+      and is_valid_location
 )
 
 select
