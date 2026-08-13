@@ -50,41 +50,19 @@ def index():
     return render_template("index.html", kpis=kpis)
 
 
-@app.route("/api/districts")
-def districts():
+@app.route("/api/heatmap")
+def heatmap():
     with engine.connect() as conn:
-        # Build district polygons from incident points using PostGIS concave hulls
         rows = conn.execute(text("""
-            SELECT
-                d.police_district,
-                d.total,
-                ST_AsGeoJSON(ST_ConcaveHull(ST_Collect(ST_MakePoint(i.longitude, i.latitude)), 0.8)) AS geometry
-            FROM (
-                SELECT police_district, SUM(incident_count) as total
-                FROM analytics.incidents_by_district
-                WHERE incident_date >= now() - interval '30 days'
-                GROUP BY police_district
-            ) d
-            JOIN public.incidents i
-                ON i.police_district = d.police_district
-               AND i.latitude IS NOT NULL
-               AND i.longitude IS NOT NULL
-            GROUP BY d.police_district, d.total
+            SELECT latitude, longitude
+            FROM public.incidents
+            WHERE incident_date >= now() - interval '30 days'
+              AND latitude IS NOT NULL
+              AND longitude IS NOT NULL
+            LIMIT 5000
         """)).fetchall()
-
-    features = []
-    for r in rows:
-        if r[2]:
-            features.append({
-                "type": "Feature",
-                "properties": {
-                    "district": r[0],
-                    "total": int(r[1])
-                },
-                "geometry": __import__('json').loads(r[2])
-            })
-
-    return jsonify({"type": "FeatureCollection", "features": features})
+    points = [[float(r[0]), float(r[1])] for r in rows]
+    return jsonify(points)
 
 
 if __name__ == "__main__":

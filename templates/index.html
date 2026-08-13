@@ -6,6 +6,7 @@
     <title>SF Crime Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -238,8 +239,8 @@
     <!-- Heatmap -->
     <div class="map-section">
         <div class="map-header">
-            <h2>Incidents by District</h2>
-            <span>Last 30 days &mdash; darker fill = higher volume</span>
+            <h2>Crime Heatmap</h2>
+            <span>Last 30 days &mdash; up to 5,000 incidents shown</span>
         </div>
         <div id="map"></div>
     </div>
@@ -258,39 +259,15 @@
         maxZoom: 18
     }).addTo(map);
 
-    function getColor(count, max) {
-        const t = count / max;
-        if (t > 0.8) return '#67000d';
-        if (t > 0.6) return '#a50f15';
-        if (t > 0.4) return '#cb181d';
-        if (t > 0.2) return '#ef3b2c';
-        if (t > 0.1) return '#fc8d59';
-        return '#fdd49e';
-    }
-
-    fetch('/api/districts')
+    fetch('/api/heatmap')
         .then(r => r.json())
-        .then(geo => {
-            const totals = geo.features.map(f => f.properties.total);
-            const max = Math.max(...totals);
-
-            const layer = L.geoJSON(geo, {
-                style: feature => ({
-                    fillColor: getColor(feature.properties.total, max),
-                    fillOpacity: 0.7,
-                    color: '#fff',
-                    weight: 2
-                }),
-                onEachFeature: (feature, layer) => {
-                    const { district, total } = feature.properties;
-                    layer.bindTooltip(
-                        `<strong>${district}</strong><br>${total.toLocaleString()} incidents`,
-                        { sticky: true }
-                    );
-                }
+        .then(points => {
+            L.heatLayer(points, {
+                radius: 18,
+                blur: 25,
+                maxZoom: 15,
+                gradient: { 0.2: '#003a70', 0.5: '#f0a500', 0.8: '#c41230', 1.0: '#ff0000' }
             }).addTo(map);
-
-            map.fitBounds(layer.getBounds());
         });
 </script>
 
