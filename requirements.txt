@@ -2,3 +2,5 @@ requests
 pandas
 sodapy
 python-dotenv
+psycopg2-binary
+sqlalchemy

@@ -5,25 +5,32 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ENDPOINT = "https://data.sfgov.org/resource/wg3w-h783.json"
+INCIDENTS_ENDPOINT = "https://data.sfgov.org/resource/wg3w-h783.json"
 TOKEN = os.getenv("SOCRATA_APP_TOKEN")
 PAGE_SIZE = 1000
 
 
-def fetch_incidents(days=7):
-    since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
+def fetch_incidents(days=7, start_date=None, end_date=None):
+    if start_date:
+        since = start_date
+    else:
+        since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S")
     headers = {"X-App-Token": TOKEN}
     all_records = []
     offset = 0
 
+    where = f"incident_date >= '{since}'"
+    if end_date:
+        where += f" AND incident_date <= '{end_date}'"
+
     while True:
         params = {
-            "$where": f"incident_date >= '{since}'",
+            "$where": where,
             "$limit": PAGE_SIZE,
             "$offset": offset,
             "$order": "incident_date DESC",
         }
-        response = requests.get(ENDPOINT, headers=headers, params=params)
+        response = requests.get(INCIDENTS_ENDPOINT, headers=headers, params=params, timeout=30)
         response.raise_for_status()
         batch = response.json()
         if not batch:
