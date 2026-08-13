@@ -50,19 +50,16 @@ def index():
     return render_template("index.html", kpis=kpis)
 
 
-@app.route("/api/heatmap")
-def heatmap():
+@app.route("/api/districts")
+def districts():
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT latitude, longitude
-            FROM public.incidents
+            SELECT police_district, SUM(incident_count) as total
+            FROM analytics.incidents_by_district
             WHERE incident_date >= now() - interval '30 days'
-              AND latitude IS NOT NULL
-              AND longitude IS NOT NULL
-            LIMIT 5000
+            GROUP BY police_district
         """)).fetchall()
-    points = [[float(r[0]), float(r[1])] for r in rows]
-    return jsonify(points)
+    return jsonify({r[0].upper(): int(r[1]) for r in rows})
 
 
 if __name__ == "__main__":
