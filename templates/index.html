@@ -12,239 +12,329 @@
 
         body {
             font-family: 'Georgia', serif;
-            background: #f4f4f0;
-            color: #1a1a1a;
+            background: #f0f0f0;
+            color: #111;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Header — SF Chronicle style */
+        /* ── Header ── */
         header {
-            background: #003a70;
-            color: white;
+            background: #000;
+            color: #fff;
             padding: 0;
-            border-bottom: 3px solid #c41230;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header-top {
+        .header-inner {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding: 14px 2rem;
         }
 
         .site-name {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: bold;
             letter-spacing: -0.5px;
         }
 
-        .site-name span {
-            color: #f0a500;
-        }
-
-        .header-sub {
-            font-family: 'Arial', sans-serif;
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.6);
+        .header-meta {
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #888;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
 
-        nav {
+        /* ── Body layout: sidebar + main ── */
+        .layout {
             display: flex;
-            gap: 0;
-            padding: 0 2rem;
+            flex: 1;
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem 1.5rem;
+            gap: 2rem;
+            align-items: flex-start;
         }
 
-        nav a {
-            color: rgba(255,255,255,0.85);
-            text-decoration: none;
+        /* ── Sidebar ── */
+        aside {
+            width: 200px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 72px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-label {
             font-family: Arial, sans-serif;
-            font-size: 0.8rem;
-            padding: 10px 16px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-
-        nav a:hover { background: rgba(255,255,255,0.1); }
-
-        /* Main content */
-        main {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .section-label {
-            font-family: Arial, sans-serif;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: bold;
             letter-spacing: 2px;
             text-transform: uppercase;
-            color: #c41230;
-            margin-bottom: 0.75rem;
-        }
-
-        .page-title {
-            font-size: 2rem;
-            line-height: 1.2;
-            margin-bottom: 0.4rem;
-            color: #111;
-        }
-
-        .page-subtitle {
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 2rem;
+            color: #999;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 1rem;
         }
 
-        /* KPI cards */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .kpi-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-top: 3px solid #003a70;
-            padding: 1.25rem;
-        }
-
-        .kpi-label {
+        .sidebar-nav a {
+            display: block;
             font-family: Arial, sans-serif;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
-            margin-bottom: 0.5rem;
+            font-size: 0.82rem;
+            color: #333;
+            text-decoration: none;
+            padding: 6px 0 6px 10px;
+            border-left: 2px solid transparent;
+            margin-bottom: 2px;
+            transition: all 0.15s;
         }
 
-        .kpi-value {
-            font-size: 2rem;
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            color: #000;
+            border-left-color: #000;
             font-weight: bold;
-            color: #003a70;
-            line-height: 1;
+        }
+
+        .sidebar-stat {
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            color: #555;
+            padding: 4px 0;
+        }
+
+        .sidebar-stat strong {
+            display: block;
+            font-size: 1.1rem;
+            color: #000;
+        }
+
+        /* ── Main content ── */
+        main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #000;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            line-height: 1.2;
             margin-bottom: 0.3rem;
         }
 
-        .kpi-sub {
+        .page-header p {
             font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            color: #999;
+            font-size: 0.82rem;
+            color: #666;
         }
 
-        /* Map section */
-        .map-section {
-            background: white;
+        /* ── Containers ── */
+        .container {
+            background: #fff;
             border: 1px solid #ddd;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
-        .map-header {
-            padding: 1rem 1.25rem;
+        .container-header {
+            padding: 0.9rem 1.25rem;
             border-bottom: 1px solid #eee;
             display: flex;
             align-items: baseline;
             gap: 1rem;
         }
 
-        .map-header h2 {
-            font-size: 1.2rem;
+        .container-header h2 {
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: -0.2px;
         }
 
-        .map-header span {
+        .container-header span {
             font-family: Arial, sans-serif;
-            font-size: 0.78rem;
-            color: #888;
+            font-size: 0.75rem;
+            color: #999;
         }
 
+        .container-body {
+            padding: 1.25rem;
+        }
+
+        /* ── KPI grid ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border: 1px solid #ddd;
+        }
+
+        .kpi-card {
+            background: #fff;
+            padding: 1.1rem 1.25rem;
+        }
+
+        .kpi-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 0.4rem;
+        }
+
+        .kpi-value {
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-value.text {
+            font-size: 1rem;
+            padding-top: 0.5rem;
+        }
+
+        .kpi-sub {
+            font-family: Arial, sans-serif;
+            font-size: 0.7rem;
+            color: #bbb;
+        }
+
+        /* ── Map ── */
         #map {
-            height: 500px;
+            height: 480px;
             width: 100%;
         }
 
-        /* Footer */
+        /* ── Footer ── */
         footer {
-            background: #1a1a1a;
-            color: #aaa;
+            background: #000;
+            color: #555;
             text-align: center;
-            padding: 1.5rem;
+            padding: 1.2rem 2rem;
             font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            margin-top: 2rem;
+            font-size: 0.72rem;
+            margin-top: auto;
         }
 
-        footer a { color: #f0a500; text-decoration: none; }
+        footer a { color: #888; text-decoration: none; }
+        footer a:hover { color: #fff; }
     </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
-    <div class="header-top">
-        <div>
-            <div class="site-name">SF <span>Crime</span> Tracker</div>
-            <div class="header-sub">San Francisco Public Safety Data</div>
-        </div>
-        <div style="font-family:Arial;font-size:0.8rem;color:rgba(255,255,255,0.5);">
-            Data: SF Open Data Portal
-        </div>
+    <div class="header-inner">
+        <div class="site-name">SF Crime Tracker</div>
+        <div class="header-meta">San Francisco Public Safety Data</div>
     </div>
-    <nav>
-        <a href="/">Overview</a>
-        <a href="#">By District</a>
-        <a href="#">By Category</a>
-        <a href="#">Trends</a>
-    </nav>
 </header>
 
-<main>
-    <div class="section-label">Crime Dashboard</div>
-    <h1 class="page-title">San Francisco Crime Overview</h1>
-    <p class="page-subtitle">
-        Live data from the SFPD Incident Reports dataset &mdash; updated daily.
-        Showing incidents from 2018 to present.
-    </p>
+<div class="layout">
 
-    <!-- KPI Cards -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-label">Incidents This Year</div>
-            <div class="kpi-value">{{ kpis.total_ytd }}</div>
-            <div class="kpi-sub">Year to date</div>
+    <!-- Sidebar -->
+    <aside>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Navigation</div>
+            <nav class="sidebar-nav">
+                <a href="/" class="active">Overview</a>
+                <a href="#">By District</a>
+                <a href="#">By Category</a>
+                <a href="#">Trends</a>
+                <a href="#">Raw Data</a>
+            </nav>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Last 7 Days</div>
-            <div class="kpi-value">{{ kpis.total_week }}</div>
-            <div class="kpi-sub">Past week</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Top Crime Type</div>
-            <div class="kpi-value" style="font-size:1.1rem;padding-top:0.4rem;">{{ kpis.top_category }}</div>
-            <div class="kpi-sub">Most common — last 30 days</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-label">Most Active District</div>
-            <div class="kpi-value" style="font-size:1.1rem;padding-top:0.4rem;">{{ kpis.top_district }}</div>
-            <div class="kpi-sub">Highest volume — last 30 days</div>
-        </div>
-    </div>
 
-    <!-- Heatmap -->
-    <div class="map-section">
-        <div class="map-header">
-            <h2>Crime Heatmap</h2>
-            <span>Last 30 days &mdash; up to 5,000 incidents shown</span>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Quick Stats</div>
+            <div class="sidebar-stat">
+                <strong>{{ kpis.total_ytd }}</strong>
+                Incidents YTD
+            </div>
+            <div class="sidebar-stat" style="margin-top:0.75rem;">
+                <strong>{{ kpis.total_week }}</strong>
+                Last 7 days
+            </div>
+            <div class="sidebar-stat" style="margin-top:0.75rem;">
+                <strong>{{ kpis.top_district }}</strong>
+                Busiest district
+            </div>
         </div>
-        <div id="map"></div>
-    </div>
-</main>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Data Source</div>
+            <div class="sidebar-nav">
+                <a href="https://data.sfgov.org">SF Open Data</a>
+                <a href="#">SFPD Incident Reports</a>
+                <a href="#">Calls for Service</a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main>
+        <div class="page-header">
+            <h1>San Francisco Crime Overview</h1>
+            <p>Live data from the SFPD Incident Reports dataset &mdash; updated daily. 2018 to present.</p>
+        </div>
+
+        <!-- KPIs -->
+        <div class="container">
+            <div class="container-header">
+                <h2>Key Metrics</h2>
+                <span>Cleaned data only &mdash; unfounded and non-criminal incidents excluded</span>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Incidents This Year</div>
+                    <div class="kpi-value">{{ kpis.total_ytd }}</div>
+                    <div class="kpi-sub">Year to date</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Last 7 Days</div>
+                    <div class="kpi-value">{{ kpis.total_week }}</div>
+                    <div class="kpi-sub">Past week</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Top Crime Type</div>
+                    <div class="kpi-value text">{{ kpis.top_category }}</div>
+                    <div class="kpi-sub">Most common — last 30 days</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Most Active District</div>
+                    <div class="kpi-value text">{{ kpis.top_district }}</div>
+                    <div class="kpi-sub">Highest volume — last 30 days</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="container">
+            <div class="container-header">
+                <h2>Crime Heatmap</h2>
+                <span>Last 30 days &mdash; up to 5,000 incidents</span>
+            </div>
+            <div id="map"></div>
+        </div>
+
+    </main>
+</div>
 
 <footer>
     Data sourced from <a href="https://data.sfgov.org">SF Open Data Portal</a> via the Socrata API.
@@ -266,7 +356,7 @@
                 radius: 18,
                 blur: 25,
                 maxZoom: 15,
-                gradient: { 0.2: '#003a70', 0.5: '#f0a500', 0.8: '#c41230', 1.0: '#ff0000' }
+                gradient: { 0.2: '#aaa', 0.5: '#555', 0.8: '#222', 1.0: '#000' }
             }).addTo(map);
         });
 </script>
