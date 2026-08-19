@@ -19,8 +19,10 @@ cd sfcrime_dbt && dbt run
 
 # Start the web app
 python3 app.py
-# http://127.0.0.1:5000        — overview, KPI cards, heatmap
-# http://127.0.0.1:5000/recent — pipeline log (last 10 incidents + calls)
+# http://127.0.0.1:5000          — overview, KPI cards, heatmap
+# http://127.0.0.1:5000/district — by neighborhood: accordion table + charts
+# http://127.0.0.1:5000/trends   — trend charts (daily, monthly, quarterly)
+# http://127.0.0.1:5000/recent   — pipeline log (last 10 incidents + calls)
 
 # One-time historical backfill (already done — DO NOT re-run)
 python3 scripts/backfill_incidents.py
@@ -47,11 +49,28 @@ sfcrime_dbt/
     incidents_by_district.sql
 templates/
   index.html    — overview: KPI cards + crime heatmap
+  district.html — by neighborhood: date range bar, accordion table, expand charts
+  trends.html   — trend charts: daily bar/line, monthly (year picker), quarterly
   recent.html   — pipeline log: last 10 incidents + calls
-app.py          — Flask web server (routes: /, /recent, /api/heatmap)
+app.py          — Flask web server
 logs/
   pipeline.log  — rotating log from run_pipeline.py (5MB, 3 backups)
 ```
+
+## Flask routes
+- `GET /` — overview page (KPI cards, heatmap)
+- `GET /district` — by neighborhood page
+- `GET /trends` — trends page
+- `GET /recent` — pipeline log page
+- `GET /api/trends` — daily incidents + 7-day rolling avg (last 90 days)
+- `GET /api/neighborhoods?start&end&limit` — top neighborhoods (default limit=15, limit=all for no cap)
+- `GET /api/neighborhood/categories?neighborhood&start&end` — top 8 categories for one neighborhood
+- `GET /api/neighborhood/time?neighborhood&granularity&start&end` — time breakdown (hour/dow/month/year)
+- `GET /api/districts/summary?days` — per-district counts
+- `GET /api/districts/trends?days` — daily per-district counts for top 5 (chart data)
+- `GET /api/monthly?year` — month-by-month counts for given year
+- `GET /api/quarterly` — all-time quarterly counts (Q1 2018 – present)
+- `GET /api/heatmap` — lat/lon points for last 30 days (up to 5,000)
 
 ## Airflow automation
 Two DAGs in `dags/sfcrime_pipeline.py` (symlinked to `~/airflow/dags/`):
@@ -67,6 +86,7 @@ Start with `airflow standalone`. DAGs will not run while the laptop is asleep �
 - Analytics schema: `analytics.stg_incidents`, `analytics.daily_trends`, `analytics.incidents_by_category`, `analytics.incidents_by_district`
 - View data: TablePlus (localhost, port 5432, db: sfcrime, no password)
 - dbt profile: `~/.dbt/profiles.yml`
+- **Known issue:** `incidents_by_district` mart has inverted `AND NOT is_valid_location` — returns 0 rows. Do NOT fix; query `stg_incidents` directly for neighborhood/district page endpoints.
 
 ## Data sources
 Both from data.sfgov.org (Socrata API — `SOCRATA_APP_TOKEN` in `.env`):
@@ -78,6 +98,30 @@ Both from data.sfgov.org (Socrata API — `SOCRATA_APP_TOKEN` in `.env`):
 ```
 SOCRATA_APP_TOKEN=your_token_here
 POSTGRES_URL=postgresql://localhost/sfcrime
+```
+
+## Chart color palette
+10-color muted palette used consistently across all Chart.js charts:
+```js
+const PALETTE = [
+    '#5B8DB8','#5A9990','#6A9E78','#8E9E5A','#C4952E',
+    '#C4714E','#B07A8A','#8E7AAB','#7A82B5','#9B7B4A',
+];
+function colorFor(name) {
+    let h = 0;
+    for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+    return PALETTE[h % PALETTE.length];
+}
+```
+Hash is stable — a name always maps to the same color regardless of sort order.
+
+## SQLAlchemy gotcha
+Using `text()` with `:name` syntax for bind parameters. Avoid putting literal colons followed by digits in SQL strings (e.g. `':00'` is parsed as bind param `00`). Use `chr(58)` to produce a colon at the Postgres level instead:
+```python
+# Bad — SQLAlchemy parses :00 as a bind parameter
+"to_char(..., 'FM00') || ':00'"
+# Good
+"to_char(incident_datetime, 'HH24') || chr(58) || '00'"
 ```
 
 ## Key decisions
@@ -105,10 +149,12 @@ POSTGRES_URL=postgresql://localhost/sfcrime
 13. ✅ Airflow DAGs — replaced cron, full pipeline orchestration with retries
 14. ✅ Smart date detection — auto catch-up if runs are missed
 15. ✅ Structured logging — Python logging module with rotation
+16. ✅ Trends page — daily bar/line chart, month-by-month (year picker), all-time quarterly
+17. ✅ By Neighborhood page — date range bar, accordion neighborhood table, expandable category + time charts, show all toggle
+18. ✅ Chart color palette — 10-color muted scheme with stable name-to-color hash
 
 ## Next steps (pick one)
-- **Trend chart** — add Chart.js bar/line chart to website using `daily_trends` mart
-- **GitHub README** — write a proper README so the repo is presentable for resume links
-- **PostGIS** — geospatial extension for neighborhood/district polygon queries
-- **More dbt models** — year-over-year comparison, top neighborhoods, hour-of-day breakdown
-- **Airflow cloud** — deploy to a VM so pipeline runs 24/7 without laptop
+- **PostGIS** — geospatial extension for neighborhood polygon queries and map overlays
+- **By Category page** — drill into incident types, trend over time per category
+- **Airflow cloud** — deploy to a VM so pipeline runs 24/7 without the laptop
+- **Year-over-year dbt model** — compare this year vs last year per neighborhood/category

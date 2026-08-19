@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trends — SF Crime Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, serif;
+            background: #f0f0f0;
+            color: #111;
+        }
+
+        header {
+            background: #000;
+            color: #fff;
+            padding: 14px 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .site-name { font-size: 1.3rem; font-weight: bold; }
+
+        .header-meta {
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #888;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .layout {
+            display: flex;
+            gap: 1.5rem;
+            max-width: 1280px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+            align-items: flex-start;
+        }
+
+        aside { width: 190px; flex-shrink: 0; }
+
+        .sidebar-section { margin-bottom: 1.75rem; }
+
+        .sidebar-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.62rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #999;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            color: #444;
+            text-decoration: none;
+            padding: 5px 0 5px 10px;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: #000;
+            border-left-color: #000;
+            font-weight: bold;
+        }
+
+        main { flex: 1; min-width: 0; }
+
+        .page-header {
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .page-header h1 { font-size: 1.7rem; }
+
+        .page-header p {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 0.3rem;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-header {
+            padding: 0.8rem 1.2rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .card-header h2 { font-size: 0.95rem; }
+
+        .card-header span {
+            font-family: Arial, sans-serif;
+            font-size: 0.73rem;
+            color: #aaa;
+        }
+
+        .card-header .spacer { flex: 1; }
+
+        .header-stat {
+            text-align: right;
+            font-family: Arial, sans-serif;
+            line-height: 1.2;
+        }
+
+        .header-stat .stat-num {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: -0.5px;
+        }
+
+        .header-stat .stat-label {
+            display: block;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #bbb;
+        }
+
+        select {
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            color: #333;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 3px 8px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:hover { border-color: #999; }
+
+        .card-body { padding: 1.2rem; }
+
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+
+        .legend-swatch {
+            width: 24px;
+            height: 10px;
+            border-radius: 1px;
+        }
+
+        .swatch-bar  { background: #ddd; }
+        .swatch-line { background: #000; }
+
+        footer {
+            background: #000;
+            color: #555;
+            text-align: center;
+            padding: 1rem 2rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            margin-top: 2rem;
+        }
+
+        footer a { color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="site-name">SF Crime Tracker</div>
+    <div class="header-meta">San Francisco Public Safety Data</div>
+</header>
+
+<div class="layout">
+    <aside>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Navigation</div>
+            <nav class="sidebar-nav">
+                <a href="/">Overview</a>
+                <a href="/district">By Neighborhood</a>
+                <a href="#">By Category</a>
+                <a href="/trends" class="active">Trends</a>
+                <a href="/recent">Pipeline Log</a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Sources</div>
+            <nav class="sidebar-nav">
+                <a href="https://data.sfgov.org">SF Open Data</a>
+                <a href="#">Incident Reports</a>
+                <a href="#">Calls for Service</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main>
+        <div class="page-header">
+            <h1>Incident Trends</h1>
+            <p>Reported incidents over time. Unfounded and non-criminal incidents excluded.</p>
+        </div>
+
+        <!-- Chart 1: Daily — last 90 days -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Daily Incidents</h2>
+                <span>Last 90 days</span>
+                <div class="spacer"></div>
+                <div class="header-stat">
+                    <span class="stat-num" id="dailyTotal">—</span>
+                    <span class="stat-label">incidents in period</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-swatch swatch-bar"></div>
+                        Daily count
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch swatch-line"></div>
+                        7-day rolling average
+                    </div>
+                </div>
+                <canvas id="dailyChart" height="90"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 2: Monthly — year picker -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Month-over-Month</h2>
+                <span>Total incidents per month</span>
+                <div class="spacer"></div>
+                <div class="header-stat" style="margin-right: 1rem;">
+                    <span class="stat-num" id="monthlyTotal">—</span>
+                    <span class="stat-label" id="monthlyTotalLabel">incidents this year</span>
+                </div>
+                <select id="yearPicker"></select>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChart" height="90"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart 3: Quarterly — all time -->
+        <div class="card">
+            <div class="card-header">
+                <h2>All-Time by Quarter</h2>
+                <span>Q1 2018 — present</span>
+                <div class="spacer"></div>
+                <div class="header-stat">
+                    <span class="stat-num" id="quarterlyTotal">—</span>
+                    <span class="stat-label">total incidents on record</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="quarterlyChart" height="70"></canvas>
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Shared chart options factory
+const axisDefaults = {
+    x: {
+        grid: { display: false },
+        ticks: { font: { family: 'Arial', size: 10 }, color: '#aaa', maxRotation: 0 },
+        border: { color: '#eee' },
+    },
+    y: {
+        grid: { color: '#f2f2f2' },
+        ticks: { font: { family: 'Arial', size: 10 }, color: '#aaa' },
+        border: { color: '#eee', dash: [3, 3] },
+    }
+};
+
+const tooltipDefaults = {
+    backgroundColor: '#fff',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    titleColor: '#111',
+    bodyColor: '#555',
+    titleFont: { family: 'Arial', size: 11 },
+    bodyFont:  { family: 'Arial', size: 11 },
+};
+
+const fmt = n => n.toLocaleString();
+
+// ── Chart 1: Daily ────────────────────────────────────────────────────────────
+fetch('/api/trends')
+    .then(r => r.json())
+    .then(data => {
+        const total = data.reduce((s, d) => s + d.count, 0);
+        document.getElementById('dailyTotal').textContent = fmt(total);
+
+        new Chart(document.getElementById('dailyChart'), {
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Daily count',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#ddd',
+                        borderWidth: 0,
+                        borderRadius: 1,
+                        order: 2,
+                    },
+                    {
+                        type: 'line',
+                        label: '7-day avg',
+                        data: data.map(d => d.avg),
+                        borderColor: '#000',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.3,
+                        fill: false,
+                        order: 1,
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipDefaults,
+                        callbacks: {
+                            label: ctx => ctx.dataset.type === 'bar'
+                                ? `  Daily: ${ctx.parsed.y}`
+                                : `  7-day avg: ${ctx.parsed.y.toFixed(1)}`,
+                        }
+                    }
+                },
+                scales: { ...axisDefaults,
+                    x: { ...axisDefaults.x, ticks: { ...axisDefaults.x.ticks, maxTicksLimit: 12 } }
+                }
+            }
+        });
+    });
+
+// ── Chart 2: Monthly ─────────────────────────────────────────────────────────
+let monthlyChart = null;
+
+function loadMonthly(year) {
+    fetch(`/api/monthly?year=${year}`)
+        .then(r => r.json())
+        .then(data => {
+            const labels = data.months.map(d => d.label);
+            const totals = data.months.map(d => d.total);
+            const yearTotal = totals.reduce((s, v) => s + v, 0);
+
+            document.getElementById('monthlyTotal').textContent = fmt(yearTotal);
+            document.getElementById('monthlyTotalLabel').textContent = `incidents in ${year}`;
+
+            if (monthlyChart) {
+                monthlyChart.data.labels = labels;
+                monthlyChart.data.datasets[0].data = totals;
+                monthlyChart.update();
+                return;
+            }
+
+            // Populate year picker on first load
+            const picker = document.getElementById('yearPicker');
+            data.years.slice().reverse().forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr;
+                opt.textContent = yr;
+                if (yr === year) opt.selected = true;
+                picker.appendChild(opt);
+            });
+            picker.addEventListener('change', e => loadMonthly(+e.target.value));
+
+            monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Incidents',
+                        data: totals,
+                        backgroundColor: '#ddd',
+                        borderWidth: 0,
+                        borderRadius: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            ...tooltipDefaults,
+                            callbacks: {
+                                label: ctx => `  Incidents: ${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: axisDefaults
+                }
+            });
+        });
+}
+
+loadMonthly(new Date().getFullYear());
+
+// ── Chart 3: Quarterly ───────────────────────────────────────────────────────
+fetch('/api/quarterly')
+    .then(r => r.json())
+    .then(data => {
+        const total = data.reduce((s, d) => s + d.total, 0);
+        document.getElementById('quarterlyTotal').textContent = fmt(total);
+        // Shade bars alternating by year for readability
+        const colors = data.map(d => {
+            const yr = parseInt(d.label.slice(-2)) + 2000;
+            return yr % 2 === 0 ? '#bbb' : '#ddd';
+        });
+
+        new Chart(document.getElementById('quarterlyChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.label),
+                datasets: [{
+                    label: 'Incidents',
+                    data: data.map(d => d.total),
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    borderRadius: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...tooltipDefaults,
+                        callbacks: {
+                            label: ctx => `  Incidents: ${ctx.parsed.y.toLocaleString()}`
+                        }
+                    }
+                },
+                scales: {
+                    ...axisDefaults,
+                    x: {
+                        ...axisDefaults.x,
+                        ticks: {
+                            ...axisDefaults.x.ticks,
+                            maxTicksLimit: 35,
+                            font: { family: 'Arial', size: 9 },
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

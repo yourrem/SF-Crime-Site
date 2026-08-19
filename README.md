@@ -27,7 +27,7 @@ Socrata API (SF Open Data)
   analytics schema         ← daily_trends, incidents_by_category, incidents_by_district
         │
         ▼
-  Flask web app            ← KPI cards, crime heatmap, pipeline log
+  Flask web app            ← Overview, By Neighborhood, Trends, Pipeline Log
 ```
 
 **Orchestration:** Apache Airflow — incidents daily at 6am (fetch → dbt), calls every 10 minutes.
@@ -40,7 +40,7 @@ Socrata API (SF Open Data)
 | Transformation | pandas, dbt |
 | Storage | PostgreSQL |
 | Orchestration | Apache Airflow 3.x |
-| Web | Flask, Leaflet.js |
+| Web | Flask, Chart.js 4.4, Leaflet.js |
 | Language | Python 3.14 |
 
 ## Features
@@ -51,7 +51,22 @@ Socrata API (SF Open Data)
 - **Data quality flags** in dbt staging layer: `is_unfounded`, `is_non_criminal`, `is_valid_location` — bad data is flagged, not deleted
 - **Two live data feeds** — historical incidents (daily) and real-time calls for service (every 10 min)
 - **Rotating logs** — Python `logging` module with `RotatingFileHandler`
-- **Pipeline monitoring page** at `/recent` — shows the last 10 loaded incidents and calls to verify the pipeline is running
+- **Pipeline monitoring page** at `/recent` — shows the last 10 loaded incidents and calls
+
+### Web App Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Overview: KPI cards (YTD, weekly, top category/neighborhood) + crime heatmap |
+| `/district` | By Neighborhood: date-range filter, ranked accordion table, expandable per-neighborhood charts |
+| `/trends` | Trend charts: daily bar/line, month-by-month (year picker), all-time quarterly |
+| `/recent` | Pipeline log: last 10 incidents and calls for service |
+
+**By Neighborhood** page highlights:
+- Date range bar: Last 24h / 7d / 30d / 90d / Year to Date / Custom date picker
+- Click any neighborhood row to expand: incidents by category (horizontal bar) + incidents by time (hour / day of week / month / year)
+- Toggle between Top 15 and all neighborhoods
+- District trend lines chart at the bottom
 
 ## Project Structure
 
@@ -70,6 +85,8 @@ sfcrime_dbt/
   models/marts/           daily_trends, incidents_by_category, incidents_by_district
 templates/
   index.html              Overview: KPIs + heatmap
+  district.html           By Neighborhood: date range, accordion, expand charts
+  trends.html             Daily, monthly, quarterly trend charts
   recent.html             Pipeline log: last 10 incidents + calls
 app.py                    Flask application
 ```
@@ -129,3 +146,5 @@ Both datasets from the [SF Open Data Portal](https://data.sfgov.org) via the Soc
 **Year-by-year backfill** — the Socrata API times out at high row offsets. Fetching one year at a time keeps each request under the timeout threshold.
 
 **Upsert with staging table** — incremental loads use a temporary staging table + `INSERT WHERE NOT IN` rather than `ON CONFLICT`, avoiding the need for a `UNIQUE` constraint on the 1M-row table.
+
+**Consistent color hashing** — each neighborhood/category name is hashed to a stable index in a 10-color muted palette. The same name always gets the same color across all charts regardless of sort order.
