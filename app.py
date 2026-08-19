@@ -50,6 +50,40 @@ def index():
     return render_template("index.html", kpis=kpis)
 
 
+@app.route("/recent")
+def recent():
+    with engine.connect() as conn:
+        incidents = conn.execute(text("""
+            SELECT
+                incident_datetime,
+                incident_category,
+                incident_description,
+                analysis_neighborhood,
+                police_district,
+                resolution
+            FROM public.incidents
+            WHERE incident_datetime IS NOT NULL
+            ORDER BY incident_datetime DESC
+            LIMIT 10
+        """)).fetchall()
+
+        calls = conn.execute(text("""
+            SELECT
+                received_datetime,
+                call_type_final_desc,
+                analysis_neighborhood,
+                police_district,
+                priority_final,
+                disposition
+            FROM public.calls
+            WHERE received_datetime IS NOT NULL
+            ORDER BY received_datetime DESC
+            LIMIT 10
+        """)).fetchall()
+
+    return render_template("recent.html", incidents=incidents, calls=calls)
+
+
 @app.route("/api/heatmap")
 def heatmap():
     with engine.connect() as conn:

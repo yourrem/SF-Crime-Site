@@ -3,44 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF Crime Tracker</title>
+    <title>SF Crime Tracke</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Georgia', serif;
+            font-family: Georgia, serif;
             background: #f0f0f0;
             color: #111;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* ── Header ── */
+        /* Header */
         header {
             background: #000;
             color: #fff;
-            padding: 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-inner {
+            padding: 14px 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 2rem;
         }
 
-        .site-name {
-            font-size: 1.4rem;
-            font-weight: bold;
-            letter-spacing: -0.5px;
-        }
+        .site-name { font-size: 1.3rem; font-weight: bold; }
 
         .header-meta {
             font-family: Arial, sans-serif;
@@ -50,56 +34,47 @@
             text-transform: uppercase;
         }
 
-        /* ── Body layout: sidebar + main ── */
+        /* Layout */
         .layout {
             display: flex;
-            flex: 1;
-            max-width: 1300px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 2rem 1.5rem;
-            gap: 2rem;
+            gap: 1.5rem;
+            max-width: 1280px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
             align-items: flex-start;
         }
 
-        /* ── Sidebar ── */
+        /* Sidebar */
         aside {
-            width: 200px;
+            width: 190px;
             flex-shrink: 0;
-            position: sticky;
-            top: 72px;
         }
 
-        .sidebar-section {
-            margin-bottom: 2rem;
-        }
+        .sidebar-section { margin-bottom: 1.75rem; }
 
         .sidebar-label {
             font-family: Arial, sans-serif;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: bold;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #999;
-            margin-bottom: 0.6rem;
             padding-bottom: 0.4rem;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 0.5rem;
         }
 
         .sidebar-nav a {
             display: block;
             font-family: Arial, sans-serif;
             font-size: 0.82rem;
-            color: #333;
+            color: #444;
             text-decoration: none;
-            padding: 6px 0 6px 10px;
+            padding: 5px 0 5px 10px;
             border-left: 2px solid transparent;
-            margin-bottom: 2px;
-            transition: all 0.15s;
         }
 
-        .sidebar-nav a:hover,
-        .sidebar-nav a.active {
+        .sidebar-nav a:hover, .sidebar-nav a.active {
             color: #000;
             border-left-color: #000;
             font-weight: bold;
@@ -108,147 +83,121 @@
         .sidebar-stat {
             font-family: Arial, sans-serif;
             font-size: 0.78rem;
-            color: #555;
-            padding: 4px 0;
+            color: #666;
+            margin-bottom: 0.75rem;
         }
 
         .sidebar-stat strong {
             display: block;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: #000;
+            font-weight: bold;
         }
 
-        /* ── Main content ── */
-        main {
-            flex: 1;
-            min-width: 0;
-        }
+        /* Main */
+        main { flex: 1; min-width: 0; }
 
         .page-header {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
             border-bottom: 2px solid #000;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
         }
 
-        .page-header h1 {
-            font-size: 1.8rem;
-            line-height: 1.2;
-            margin-bottom: 0.3rem;
-        }
+        .page-header h1 { font-size: 1.7rem; }
 
         .page-header p {
             font-family: Arial, sans-serif;
-            font-size: 0.82rem;
-            color: #666;
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 0.3rem;
         }
 
-        /* ── Containers ── */
-        .container {
+        /* Cards */
+        .card {
             background: #fff;
             border: 1px solid #ddd;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
-        .container-header {
-            padding: 0.9rem 1.25rem;
+        .card-header {
+            padding: 0.8rem 1.2rem;
             border-bottom: 1px solid #eee;
             display: flex;
             align-items: baseline;
             gap: 1rem;
         }
 
-        .container-header h2 {
-            font-size: 1rem;
-            font-weight: bold;
-            letter-spacing: -0.2px;
-        }
+        .card-header h2 { font-size: 0.95rem; }
 
-        .container-header span {
+        .card-header span {
             font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            color: #999;
+            font-size: 0.73rem;
+            color: #aaa;
         }
 
-        .container-body {
-            padding: 1.25rem;
-        }
-
-        /* ── KPI grid ── */
+        /* KPI grid */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            background: #ddd;
-            border: 1px solid #ddd;
         }
 
-        .kpi-card {
-            background: #fff;
-            padding: 1.1rem 1.25rem;
+        .kpi {
+            padding: 1rem 1.2rem;
+            border-right: 1px solid #eee;
         }
+
+        .kpi:last-child { border-right: none; }
 
         .kpi-label {
             font-family: Arial, sans-serif;
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #999;
-            margin-bottom: 0.4rem;
+            color: #aaa;
+            margin-bottom: 0.35rem;
         }
 
         .kpi-value {
-            font-size: 1.9rem;
+            font-size: 1.8rem;
             font-weight: bold;
             color: #000;
             line-height: 1;
-            margin-bottom: 0.25rem;
         }
 
-        .kpi-value.text {
-            font-size: 1rem;
-            padding-top: 0.5rem;
-        }
+        .kpi-value.sm { font-size: 0.95rem; padding-top: 0.45rem; }
 
         .kpi-sub {
             font-family: Arial, sans-serif;
-            font-size: 0.7rem;
-            color: #bbb;
+            font-size: 0.68rem;
+            color: #ccc;
+            margin-top: 0.25rem;
         }
 
-        /* ── Map ── */
-        #map {
-            height: 480px;
-            width: 100%;
-        }
+        /* Map */
+        #map { height: 460px; width: 100%; }
 
-        /* ── Footer ── */
+        /* Footer */
         footer {
             background: #000;
             color: #555;
             text-align: center;
-            padding: 1.2rem 2rem;
+            padding: 1rem 2rem;
             font-family: Arial, sans-serif;
             font-size: 0.72rem;
-            margin-top: auto;
+            margin-top: 2rem;
         }
 
-        footer a { color: #888; text-decoration: none; }
-        footer a:hover { color: #fff; }
+        footer a { color: #777; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<!-- Header -->
 <header>
-    <div class="header-inner">
-        <div class="site-name">SF Crime Tracker</div>
-        <div class="header-meta">San Francisco Public Safety Data</div>
-    </div>
+    <div class="site-name">SF Crime Tracker</div>
+    <div class="header-meta">San Francisco Public Safety Data</div>
 </header>
 
 <div class="layout">
-
-    <!-- Sidebar -->
     <aside>
         <div class="sidebar-section">
             <div class="sidebar-label">Navigation</div>
@@ -257,7 +206,7 @@
                 <a href="#">By District</a>
                 <a href="#">By Category</a>
                 <a href="#">Trends</a>
-                <a href="#">Raw Data</a>
+                <a href="/recent">Pipeline Log</a>
             </nav>
         </div>
 
@@ -267,80 +216,77 @@
                 <strong>{{ kpis.total_ytd }}</strong>
                 Incidents YTD
             </div>
-            <div class="sidebar-stat" style="margin-top:0.75rem;">
+            <div class="sidebar-stat">
                 <strong>{{ kpis.total_week }}</strong>
                 Last 7 days
             </div>
-            <div class="sidebar-stat" style="margin-top:0.75rem;">
+            <div class="sidebar-stat">
                 <strong>{{ kpis.top_district }}</strong>
                 Busiest district
             </div>
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-label">Data Source</div>
-            <div class="sidebar-nav">
+            <div class="sidebar-label">Sources</div>
+            <nav class="sidebar-nav">
                 <a href="https://data.sfgov.org">SF Open Data</a>
-                <a href="#">SFPD Incident Reports</a>
+                <a href="#">Incident Reports</a>
                 <a href="#">Calls for Service</a>
-            </div>
+            </nav>
         </div>
     </aside>
 
-    <!-- Main content -->
     <main>
         <div class="page-header">
             <h1>San Francisco Crime Overview</h1>
-            <p>Live data from the SFPD Incident Reports dataset &mdash; updated daily. 2018 to present.</p>
+            <p>Live data from the SFPD Incident Reports dataset — updated daily. 2018 to present.</p>
         </div>
 
-        <!-- KPIs -->
-        <div class="container">
-            <div class="container-header">
+        <div class="card">
+            <div class="card-header">
                 <h2>Key Metrics</h2>
-                <span>Cleaned data only &mdash; unfounded and non-criminal incidents excluded</span>
+                <span>Unfounded and non-criminal incidents excluded</span>
             </div>
             <div class="kpi-grid">
-                <div class="kpi-card">
+                <div class="kpi">
                     <div class="kpi-label">Incidents This Year</div>
                     <div class="kpi-value">{{ kpis.total_ytd }}</div>
                     <div class="kpi-sub">Year to date</div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi">
                     <div class="kpi-label">Last 7 Days</div>
                     <div class="kpi-value">{{ kpis.total_week }}</div>
                     <div class="kpi-sub">Past week</div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi">
                     <div class="kpi-label">Top Crime Type</div>
-                    <div class="kpi-value text">{{ kpis.top_category }}</div>
+                    <div class="kpi-value sm">{{ kpis.top_category }}</div>
                     <div class="kpi-sub">Most common — last 30 days</div>
                 </div>
-                <div class="kpi-card">
+                <div class="kpi">
                     <div class="kpi-label">Most Active District</div>
-                    <div class="kpi-value text">{{ kpis.top_district }}</div>
+                    <div class="kpi-value sm">{{ kpis.top_district }}</div>
                     <div class="kpi-sub">Highest volume — last 30 days</div>
                 </div>
             </div>
         </div>
 
-        <!-- Map -->
-        <div class="container">
-            <div class="container-header">
+        <div class="card">
+            <div class="card-header">
                 <h2>Crime Heatmap</h2>
-                <span>Last 30 days &mdash; up to 5,000 incidents</span>
+                <span>Last 30 days — up to 5,000 incidents</span>
             </div>
             <div id="map"></div>
         </div>
-
     </main>
 </div>
 
 <footer>
-    Data sourced from <a href="https://data.sfgov.org">SF Open Data Portal</a> via the Socrata API.
-    Updated daily. For informational purposes only.
+    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
 </footer>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
     const map = L.map('map').setView([37.7749, -122.4194], 12);
 

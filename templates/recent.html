@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Log — SF Crime Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, serif;
+            background: #f0f0f0;
+            color: #111;
+        }
+
+        header {
+            background: #000;
+            color: #fff;
+            padding: 14px 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .site-name { font-size: 1.3rem; font-weight: bold; }
+
+        .header-meta {
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            color: #888;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .layout {
+            display: flex;
+            gap: 1.5rem;
+            max-width: 1280px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+            align-items: flex-start;
+        }
+
+        aside {
+            width: 190px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-section { margin-bottom: 1.75rem; }
+
+        .sidebar-label {
+            font-family: Arial, sans-serif;
+            font-size: 0.62rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #999;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            color: #444;
+            text-decoration: none;
+            padding: 5px 0 5px 10px;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: #000;
+            border-left-color: #000;
+            font-weight: bold;
+        }
+
+        main { flex: 1; min-width: 0; }
+
+        .page-header {
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .page-header h1 { font-size: 1.7rem; }
+
+        .page-header p {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 0.3rem;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 0.8rem 1.2rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .card-header h2 { font-size: 0.95rem; }
+
+        .card-header span {
+            font-family: Arial, sans-serif;
+            font-size: 0.73rem;
+            color: #aaa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 0.55rem 1rem;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f2f2f2;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+
+        tbody tr:hover { background: #fafafa; }
+
+        td {
+            padding: 0.6rem 1rem;
+            vertical-align: top;
+            color: #333;
+        }
+
+        td.datetime {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        td.category {
+            font-weight: bold;
+            color: #111;
+        }
+
+        td.description {
+            color: #666;
+            font-size: 0.75rem;
+        }
+
+        td.resolution {
+            font-size: 0.72rem;
+            color: #999;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            font-size: 0.65rem;
+            font-family: Arial, sans-serif;
+            border: 1px solid #ddd;
+            color: #666;
+        }
+
+        .badge.priority-1 { border-color: #000; color: #000; font-weight: bold; }
+        .badge.priority-2 { border-color: #555; color: #555; }
+
+        footer {
+            background: #000;
+            color: #555;
+            text-align: center;
+            padding: 1rem 2rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.72rem;
+            margin-top: 2rem;
+        }
+
+        footer a { color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="site-name">SF Crime Tracker</div>
+    <div class="header-meta">San Francisco Public Safety Data</div>
+</header>
+
+<div class="layout">
+    <aside>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Navigation</div>
+            <nav class="sidebar-nav">
+                <a href="/">Overview</a>
+                <a href="#">By District</a>
+                <a href="#">By Category</a>
+                <a href="#">Trends</a>
+                <a href="/recent" class="active">Pipeline Log</a>
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Sources</div>
+            <nav class="sidebar-nav">
+                <a href="https://data.sfgov.org">SF Open Data</a>
+                <a href="#">Incident Reports</a>
+                <a href="#">Calls for Service</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main>
+        <div class="page-header">
+            <h1>Pipeline Log</h1>
+            <p>The 10 most recently loaded records from each feed — use this to verify the pipeline is running.</p>
+        </div>
+
+        <!-- Incidents -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Incidents</h2>
+                <span>Last 10 loaded — from public.incidents</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date / Time</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Neighborhood</th>
+                        <th>District</th>
+                        <th>Resolution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in incidents %}
+                    <tr>
+                        <td class="datetime">
+                            {% if row.incident_datetime %}
+                                {{ row.incident_datetime | string | truncate(16, true, '') }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="category">{{ row.incident_category or '—' }}</td>
+                        <td class="description">{{ row.incident_description or '—' }}</td>
+                        <td>{{ row.analysis_neighborhood or '—' }}</td>
+                        <td>{{ row.police_district or '—' }}</td>
+                        <td class="resolution">{{ row.resolution or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Calls -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Calls for Service</h2>
+                <span>Last 10 loaded — from public.calls</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Received</th>
+                        <th>Call Type</th>
+                        <th>Neighborhood</th>
+                        <th>District</th>
+                        <th>Priority</th>
+                        <th>Disposition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in calls %}
+                    <tr>
+                        <td class="datetime">
+                            {% if row.received_datetime %}
+                                {{ row.received_datetime | string | truncate(16, true, '') }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="category">{{ row.call_type_final_desc or '—' }}</td>
+                        <td>{{ row.analysis_neighborhood or '—' }}</td>
+                        <td>{{ row.police_district or '—' }}</td>
+                        <td>
+                            {% if row.priority_final %}
+                                <span class="badge priority-{{ row.priority_final }}">P{{ row.priority_final }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="resolution">{{ row.disposition or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<footer>
+    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+</footer>
+
+</body>
+</html>
