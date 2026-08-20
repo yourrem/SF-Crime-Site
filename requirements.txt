@@ -1,6 +1,10 @@
+flask
+gunicorn
 requests
 pandas
 sodapy
 python-dotenv
 psycopg2-binary
 sqlalchemy
+flask-caching
+redis

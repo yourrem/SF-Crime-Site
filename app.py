@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, jsonify, request
+from flask_caching import Cache
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
@@ -7,6 +8,12 @@ load_dotenv()
 
 app = Flask(__name__)
 engine = create_engine(os.getenv("POSTGRES_URL"))
+
+cache = Cache(app, config={
+    "CACHE_TYPE": "RedisCache",
+    "CACHE_REDIS_URL": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+    "CACHE_DEFAULT_TIMEOUT": 300,
+})
 
 
 @app.route("/")
@@ -112,6 +119,94 @@ def district():
     return render_template("district.html")
 
 
+@app.route("/category")
+def category():
+    return render_template("category.html")
+
+
+@app.route("/api/categories")
+@cache.cached(query_string=True)
+def api_categories():
+    start = request.args.get("start")
+    end   = request.args.get("end")
+    limit = request.args.get("limit", "15")
+    limit_clause = f"LIMIT {int(limit)}" if limit.isdigit() else ""
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT incident_category, COUNT(*) AS total
+            FROM analytics.stg_incidents
+            WHERE incident_date BETWEEN :start AND :end
+              AND incident_category IS NOT NULL
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY incident_category
+            ORDER BY total DESC
+            {limit_clause}
+        """), {"start": start, "end": end}).fetchall()
+    return jsonify([{"category": r[0], "total": r[1]} for r in rows])
+
+
+@app.route("/api/category/time")
+@cache.cached(query_string=True)
+def api_category_time():
+    category  = request.args.get("category")
+    granularity = request.args.get("granularity", "hour")
+    start = request.args.get("start")
+    end   = request.args.get("end")
+
+    # Use incident_datetime (when it happened), fall back to report_datetime if null
+    time_col = "COALESCE(incident_datetime, report_datetime)"
+
+    queries = {
+        "hour": f"""
+            SELECT EXTRACT(HOUR FROM {time_col})::int AS bucket,
+                   to_char({time_col}, 'HH24') || chr(58) || '00' AS label,
+                   COUNT(*) AS total
+            FROM analytics.stg_incidents
+            WHERE incident_category = :category
+              AND incident_date BETWEEN :start AND :end
+              AND {time_col} IS NOT NULL
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY bucket, label ORDER BY bucket
+        """,
+        "dow": """
+            SELECT EXTRACT(DOW FROM incident_date)::int AS bucket,
+                   to_char(incident_date, 'Dy') AS label,
+                   COUNT(*) AS total
+            FROM analytics.stg_incidents
+            WHERE incident_category = :category
+              AND incident_date BETWEEN :start AND :end
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY bucket, label ORDER BY bucket
+        """,
+        "month": """
+            SELECT EXTRACT(MONTH FROM incident_date)::int AS bucket,
+                   to_char(incident_date, 'Mon') AS label,
+                   COUNT(*) AS total
+            FROM analytics.stg_incidents
+            WHERE incident_category = :category
+              AND incident_date BETWEEN :start AND :end
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY bucket, label ORDER BY bucket
+        """,
+        "year": """
+            SELECT EXTRACT(YEAR FROM incident_date)::int AS bucket,
+                   EXTRACT(YEAR FROM incident_date)::text AS label,
+                   COUNT(*) AS total
+            FROM analytics.stg_incidents
+            WHERE incident_category = :category
+              AND incident_date BETWEEN :start AND :end
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY bucket, label ORDER BY bucket
+        """,
+    }
+
+    sql = queries.get(granularity, queries["hour"])
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql),
+            {"category": category, "start": start, "end": end}).fetchall()
+    return jsonify([{"label": r[1], "total": r[2]} for r in rows])
+
+
 @app.route("/api/districts/summary")
 def api_districts_summary():
     days = request.args.get("days", 30, type=int)
@@ -130,6 +225,7 @@ def api_districts_summary():
 
 
 @app.route("/api/neighborhoods")
+@cache.cached(query_string=True)
 def api_neighborhoods():
     start = request.args.get("start")
     end   = request.args.get("end")
@@ -150,6 +246,7 @@ def api_neighborhoods():
 
 
 @app.route("/api/neighborhood/categories")
+@cache.cached(query_string=True)
 def api_neighborhood_categories():
     neighborhood = request.args.get("neighborhood")
     start = request.args.get("start")
@@ -170,6 +267,7 @@ def api_neighborhood_categories():
 
 
 @app.route("/api/neighborhood/time")
+@cache.cached(query_string=True)
 def api_neighborhood_time():
     neighborhood  = request.args.get("neighborhood")
     granularity   = request.args.get("granularity", "hour")
@@ -228,6 +326,7 @@ def api_neighborhood_time():
 
 
 @app.route("/api/districts/trends")
+@cache.cached(query_string=True)
 def api_districts_trends():
     days = request.args.get("days", 60, type=int)
     with engine.connect() as conn:

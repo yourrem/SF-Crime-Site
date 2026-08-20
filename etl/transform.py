@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def clean(df: pd.DataFrame) -> pd.DataFrame:
+def clean_incidents(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Drop columns with no analytical value

@@ -4,6 +4,7 @@
 # Database
 *.db
 *.sqlite
+*_dump.sql
 
 # Raw data (API responses can be large)
 data/raw/

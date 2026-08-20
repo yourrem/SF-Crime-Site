@@ -1,3 +1,11 @@
+{{ config(
+    materialized='table',
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_stg_incidents_date ON {{ this }}(incident_date)",
+        "CREATE INDEX IF NOT EXISTS idx_stg_incidents_neighborhood_date ON {{ this }}(analysis_neighborhood, incident_date)",
+    ]
+) }}
+
 with source as (
     select * from {{ source('public', 'incidents') }}
 ),
