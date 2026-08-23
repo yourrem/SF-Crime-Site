@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-engine = create_engine(os.getenv("POSTGRES_URL"))
+engine = create_engine(os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL"))
 
 cache = Cache(app, config={
     "CACHE_TYPE": "RedisCache",
