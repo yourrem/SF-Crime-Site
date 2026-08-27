@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecast — SF Crime Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Georgia, serif; background: #f0f0f0; color: #111; }
+
+        header {
+            background: #000; color: #fff;
+            padding: 14px 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .site-name { font-size: 1.3rem; font-weight: bold; }
+        .header-meta {
+            font-family: Arial, sans-serif; font-size: 0.72rem;
+            color: #888; letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        .layout {
+            display: flex; gap: 1.5rem;
+            max-width: 1280px; margin: 1.5rem auto;
+            padding: 0 1.5rem; align-items: flex-start;
+        }
+        aside { width: 190px; flex-shrink: 0; }
+        .sidebar-section { margin-bottom: 1.75rem; }
+        .sidebar-label {
+            font-family: Arial, sans-serif; font-size: 0.62rem; font-weight: bold;
+            letter-spacing: 2px; text-transform: uppercase; color: #999;
+            padding-bottom: 0.4rem; border-bottom: 1px solid #ccc; margin-bottom: 0.5rem;
+        }
+        .sidebar-nav a {
+            display: block; font-family: Arial, sans-serif; font-size: 0.82rem;
+            color: #444; text-decoration: none; padding: 5px 0 5px 10px;
+            border-left: 2px solid transparent;
+        }
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: #000; border-left-color: #000; font-weight: bold;
+        }
+
+        main { flex: 1; min-width: 0; }
+
+        .page-header {
+            border-bottom: 2px solid #000; padding-bottom: 0.75rem; margin-bottom: 1.25rem;
+        }
+        .page-header h1 { font-size: 1.7rem; }
+        .page-header p {
+            font-family: Arial, sans-serif; font-size: 0.8rem; color: #777; margin-top: 0.3rem;
+        }
+
+        /* ── KPI strip ──────────────────────────────────────── */
+        .kpi-strip {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1rem; margin-bottom: 1.25rem;
+        }
+        .kpi {
+            background: #fff; border: 1px solid #ddd;
+            padding: 0.9rem 1.1rem;
+        }
+        .kpi-label {
+            font-family: Arial, sans-serif; font-size: 0.62rem;
+            text-transform: uppercase; letter-spacing: 1.5px; color: #aaa;
+            margin-bottom: 0.35rem;
+        }
+        .kpi-value {
+            font-size: 1.6rem; font-weight: bold; line-height: 1;
+        }
+        .kpi-sub {
+            font-family: Arial, sans-serif; font-size: 0.68rem; color: #bbb;
+            margin-top: 0.3rem;
+        }
+
+        /* ── Card ──────────────────────────────────────────── */
+        .card { background: #fff; border: 1px solid #ddd; margin-bottom: 1.25rem; }
+        .card-header {
+            padding: 0.8rem 1.2rem; border-bottom: 1px solid #eee;
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .card-header h2 { font-size: 0.95rem; }
+        .card-header > span { font-family: Arial, sans-serif; font-size: 0.73rem; color: #aaa; }
+        .card-body { padding: 1.2rem; }
+
+        /* ── Legend ─────────────────────────────────────────── */
+        .legend {
+            display: flex; gap: 1.5rem; flex-wrap: wrap;
+            font-family: Arial, sans-serif; font-size: 0.72rem; color: #888;
+            margin-bottom: 1rem;
+        }
+        .legend-item { display: flex; align-items: center; gap: 7px; }
+        .legend-line {
+            width: 22px; height: 3px; border-radius: 2px;
+        }
+        .legend-line.dashed {
+            background: repeating-linear-gradient(
+                to right, #C4714E 0, #C4714E 4px, transparent 4px, transparent 8px
+            );
+        }
+        .legend-band {
+            width: 22px; height: 10px; border-radius: 2px;
+            background: rgba(196, 113, 78, 0.15); border: 1px solid rgba(196, 113, 78, 0.3);
+        }
+
+        /* ── Model note ─────────────────────────────────────── */
+        .model-note {
+            font-family: Arial, sans-serif; font-size: 0.72rem; color: #aaa;
+            border-top: 1px solid #f2f2f2; padding: 0.75rem 1.2rem;
+            line-height: 1.6;
+        }
+        .model-note strong { color: #888; }
+
+        footer {
+            background: #000; color: #555; text-align: center;
+            padding: 1rem 2rem; font-family: Arial, sans-serif;
+            font-size: 0.72rem; margin-top: 2rem;
+        }
+        footer a { color: #777; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="site-name">SF Crime Tracker</div>
+    <div class="header-meta">San Francisco Public Safety Data</div>
+</header>
+
+<div class="layout">
+    <aside>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Navigation</div>
+            <nav class="sidebar-nav">
+                <a href="/">Overview</a>
+                <a href="/district">By Neighborhood</a>
+                <a href="/category">By Category</a>
+                <a href="/trends">Trends</a>
+                <a href="/forecast" class="active">Forecast</a>
+                <a href="/recent">Pipeline Log</a>
+            </nav>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Sources</div>
+            <nav class="sidebar-nav">
+                <a href="https://data.sfgov.org">SF Open Data</a>
+                <a href="#">Incident Reports</a>
+                <a href="#">Calls for Service</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main>
+        <div class="page-header">
+            <h1>Crime Forecast</h1>
+            <p>30-day ahead forecast of daily incident counts using a Ridge regression model trained on 8+ years of SFPD data. Retrained nightly via Airflow.</p>
+        </div>
+
+        <!-- KPI strip (populated by JS) -->
+        <div class="kpi-strip">
+            <div class="kpi">
+                <div class="kpi-label">Test MAE</div>
+                <div class="kpi-value" id="kpiMae">—</div>
+                <div class="kpi-sub">incidents / day</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-label">Confidence Band</div>
+                <div class="kpi-value" id="kpiRmse">—</div>
+                <div class="kpi-sub">± RMSE incidents / day</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-label">Training Data</div>
+                <div class="kpi-value" id="kpiTrainRows">—</div>
+                <div class="kpi-sub">days of history</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-label">Last Retrained</div>
+                <div class="kpi-value" style="font-size:1rem; padding-top:0.3rem;" id="kpiTrained">—</div>
+                <div class="kpi-sub">Airflow sfcrime_incidents_daily</div>
+            </div>
+        </div>
+
+        <!-- Forecast chart -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Actual vs Predicted — Daily Incidents</h2>
+                <span>Last 90 days actual + 30-day forecast</span>
+            </div>
+            <div class="card-body">
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-line" style="background:#5B8DB8;"></div>
+                        <span>Actual incidents</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line dashed"></div>
+                        <span>Predicted (30-day forecast)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-band"></div>
+                        <span>Confidence band (±1 RMSE)</span>
+                    </div>
+                </div>
+                <canvas id="forecastChart" height="90"></canvas>
+            </div>
+            <div class="model-note">
+                <strong>Model:</strong> Ridge regression &nbsp;|&nbsp;
+                <strong>Features:</strong> lag-1, lag-7, lag-30 incident counts; day of week; month; year; weekend flag &nbsp;|&nbsp;
+                <strong>Evaluation:</strong> 90-day held-out test set &nbsp;|&nbsp;
+                <strong>Confidence band:</strong> ±1 RMSE from test evaluation
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const fmt  = n => n.toLocaleString();
+const fmtF = n => Number(n).toFixed(1);
+
+const ACTUAL_COLOR = '#5B8DB8';
+const PRED_COLOR   = '#C4714E';
+
+fetch('/api/forecast')
+    .then(r => r.json())
+    .then(data => {
+        // KPIs
+        if (data.metrics) {
+            document.getElementById('kpiMae').textContent       = fmtF(data.metrics.mae);
+            document.getElementById('kpiRmse').textContent      = fmtF(data.metrics.rmse);
+            document.getElementById('kpiTrainRows').textContent = fmt(data.metrics.train_rows);
+            document.getElementById('kpiTrained').textContent   = data.metrics.trained_at || '—';
+        }
+
+        // Build combined label list (actuals then predictions, no overlap)
+        const actualDates = data.actuals.map(d => d.date);
+        const predDates   = data.predictions.map(d => d.date);
+        const allDates    = [...actualDates, ...predDates];
+
+        // Map predictions by date for easy lookup
+        const predMap = {};
+        data.predictions.forEach(d => {
+            predMap[d.date] = d;
+        });
+
+        // Actuals dataset — null for prediction dates
+        const actualVals = allDates.map(d => {
+            const a = data.actuals.find(x => x.date === d);
+            return a ? a.count : null;
+        });
+
+        // Prediction dataset — null for actual dates
+        const predVals = allDates.map(d => predMap[d] ? predMap[d].predicted : null);
+        const upperVals = allDates.map(d => predMap[d] ? predMap[d].upper : null);
+        const lowerVals = allDates.map(d => predMap[d] ? predMap[d].lower : null);
+
+        // X-axis labels — show every ~2 weeks
+        const labels = allDates.map((d, i) => {
+            const date = new Date(d);
+            const day  = date.getUTCDate();
+            return (day === 1 || day === 15) ? d.slice(5) : '';
+        });
+
+        new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: allDates,
+                datasets: [
+                    {
+                        label: 'Actual',
+                        data: actualVals,
+                        borderColor: ACTUAL_COLOR,
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Predicted',
+                        data: predVals,
+                        borderColor: PRED_COLOR,
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Upper bound',
+                        data: upperVals,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        fill: '+1',
+                        backgroundColor: 'rgba(196, 113, 78, 0.12)',
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Lower bound',
+                        data: lowerVals,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#fff',
+                        borderColor: '#ddd',
+                        borderWidth: 1,
+                        titleColor: '#111',
+                        bodyColor: '#555',
+                        titleFont: { family: 'Arial', size: 11 },
+                        bodyFont:  { family: 'Arial', size: 11 },
+                        filter: item => item.dataset.label !== 'Upper bound' && item.dataset.label !== 'Lower bound',
+                        callbacks: {
+                            label: ctx => {
+                                if (ctx.parsed.y === null) return null;
+                                const d = predMap[allDates[ctx.dataIndex]];
+                                if (d && ctx.dataset.label === 'Predicted') {
+                                    return `  Predicted: ${fmtF(ctx.parsed.y)}  (${fmtF(d.lower)}–${fmtF(d.upper)})`;
+                                }
+                                return `  ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: 'Arial', size: 10 }, color: '#aaa',
+                            maxRotation: 0,
+                            callback: (val, i) => labels[i],
+                        },
+                        border: { color: '#eee' },
+                    },
+                    y: {
+                        grid: { color: '#f2f2f2' },
+                        ticks: { font: { family: 'Arial', size: 10 }, color: '#aaa' },
+                        border: { color: '#eee', dash: [3, 3] },
+                        min: 0,
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

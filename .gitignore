@@ -6,6 +6,9 @@
 *.sqlite
 *_dump.sql
 
+# ML model artifacts
+ml/*.pkl
+
 # Raw data (API responses can be large)
 data/raw/
 

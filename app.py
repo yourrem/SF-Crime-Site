@@ -120,6 +120,49 @@ def api_trends():
     ])
 
 
+@app.route("/forecast")
+def forecast():
+    return render_template("forecast.html")
+
+
+@app.route("/api/forecast")
+@cache.cached(query_string=True)
+def api_forecast():
+    with engine.connect() as conn:
+        actuals = conn.execute(text("""
+            SELECT to_char(incident_date, 'YYYY-MM-DD'), incident_count
+            FROM analytics.daily_trends
+            WHERE incident_date >= now() - interval '90 days'
+            ORDER BY incident_date ASC
+        """)).fetchall()
+
+        predictions = conn.execute(text("""
+            SELECT to_char(forecast_date, 'YYYY-MM-DD'),
+                   predicted_count, lower_bound, upper_bound
+            FROM analytics.crime_forecast
+            ORDER BY forecast_date ASC
+        """)).fetchall()
+
+        meta = conn.execute(text("""
+            SELECT mae, rmse, train_rows, test_rows,
+                   to_char(trained_at, 'YYYY-MM-DD HH24:MI') AS trained_at
+            FROM analytics.forecast_meta WHERE id = 1
+        """)).fetchone()
+
+    return jsonify({
+        "actuals": [{"date": r[0], "count": r[1]} for r in actuals],
+        "predictions": [
+            {"date": r[0], "predicted": r[1], "lower": r[2], "upper": r[3]}
+            for r in predictions
+        ],
+        "metrics": {
+            "mae": meta[0], "rmse": meta[1],
+            "train_rows": meta[2], "test_rows": meta[3],
+            "trained_at": meta[4],
+        } if meta else None,
+    })
+
+
 @app.route("/district")
 def district():
     return render_template("district.html")

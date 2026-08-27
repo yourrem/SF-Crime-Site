@@ -36,7 +36,12 @@ with DAG(
         bash_command=f"cd {DBT_DIR} && {DBT} run",
     )
 
-    fetch_incidents >> run_dbt
+    retrain_forecast = BashOperator(
+        task_id="retrain_forecast",
+        bash_command=f"cd {PROJECT} && {PYTHON} scripts/train_forecast.py",
+    )
+
+    fetch_incidents >> run_dbt >> retrain_forecast
 
 
 # ── Real-time calls pipeline (every 10 minutes) ───────────────────────────────
