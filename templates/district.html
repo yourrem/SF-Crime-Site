@@ -303,12 +303,13 @@ const axisDefaults = {
 
 // ── Date range state ──────────────────────────────────────────────────────────
 let DR = { start: '', end: '' };
+let maxDate = new Date();  // capped to latest date in DB once fetched
 
 function toISO(d) { return d.toISOString().slice(0, 10); }
 
 function setRange(days, label) {
-    const end = new Date();
-    const start = new Date();
+    const end   = new Date(maxDate);
+    const start = new Date(maxDate);
     start.setDate(start.getDate() - days);
     DR = { start: toISO(start), end: toISO(end) };
     document.getElementById('rangeLabel').textContent = label;
@@ -331,9 +332,8 @@ document.getElementById('ytdBtn').addEventListener('click', () => {
     document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('ytdBtn').classList.add('active');
     document.getElementById('customWrap').classList.remove('visible');
-    const now = new Date();
-    DR = { start: `${now.getFullYear()}-01-01`, end: toISO(now) };
-    document.getElementById('rangeLabel').textContent = `Year to Date ${now.getFullYear()}`;
+    DR = { start: `${maxDate.getFullYear()}-01-01`, end: toISO(maxDate) };
+    document.getElementById('rangeLabel').textContent = `Year to Date ${maxDate.getFullYear()}`;
     reloadAll();
 });
 
@@ -610,10 +610,15 @@ function loadTrends(days) {
 }
 
 document.getElementById('trendPeriod').addEventListener('change', e => loadTrends(+e.target.value));
-loadTrends(60);
 
 // Init — must come after all let/const declarations above
-setRange(7, 'Last 7 days');
+fetch('/api/latest-date')
+    .then(r => r.json())
+    .then(d => {
+        if (d.latest_date) maxDate = new Date(d.latest_date + 'T12:00:00');
+        setRange(7, 'Last 7 days');
+        loadTrends(60);
+    });
 
 // Reload neighborhoods whenever date range changes
 function reloadAll() {

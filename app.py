@@ -102,6 +102,17 @@ def trends():
     return render_template("trends.html")
 
 
+@app.route("/api/latest-date")
+@cache.cached(timeout=3600)
+def api_latest_date():
+    with engine.connect() as conn:
+        row = conn.execute(text(
+            "SELECT MAX(incident_date) FROM analytics.stg_incidents"
+        )).fetchone()
+    d = row[0]
+    return jsonify({"latest_date": d.strftime("%Y-%m-%d") if d else None})
+
+
 @app.route("/api/trends")
 def api_trends():
     with engine.connect() as conn:
