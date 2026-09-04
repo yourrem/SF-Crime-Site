@@ -3,190 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF Crime Tracke</title>
+    <title>SF Crime Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: Georgia, serif;
-            background: #f0f0f0;
-            color: #111;
-        }
+        body { font-family: Georgia, serif; background: #f0f0f0; color: #111; }
 
-        /* Header */
         header {
-            background: #000;
-            color: #fff;
+            background: #000; color: #fff;
             padding: 14px 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
         }
-
         .site-name { font-size: 1.3rem; font-weight: bold; }
-
         .header-meta {
-            font-family: Arial, sans-serif;
-            font-size: 0.72rem;
-            color: #888;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            font-family: Arial, sans-serif; font-size: 0.72rem;
+            color: #888; letter-spacing: 1px; text-transform: uppercase;
         }
 
-        /* Layout */
         .layout {
-            display: flex;
-            gap: 1.5rem;
-            max-width: 1280px;
-            margin: 1.5rem auto;
-            padding: 0 1.5rem;
-            align-items: flex-start;
+            display: flex; gap: 1.5rem;
+            max-width: 1280px; margin: 1.5rem auto;
+            padding: 0 1.5rem; align-items: flex-start;
         }
 
-        /* Sidebar */
-        aside {
-            width: 190px;
-            flex-shrink: 0;
-        }
-
+        aside { width: 190px; flex-shrink: 0; }
         .sidebar-section { margin-bottom: 1.75rem; }
-
         .sidebar-label {
-            font-family: Arial, sans-serif;
-            font-size: 0.62rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #999;
-            padding-bottom: 0.4rem;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 0.5rem;
+            font-family: Arial, sans-serif; font-size: 0.62rem; font-weight: bold;
+            letter-spacing: 2px; text-transform: uppercase; color: #999;
+            padding-bottom: 0.4rem; border-bottom: 1px solid #ccc; margin-bottom: 0.5rem;
         }
-
         .sidebar-nav a {
-            display: block;
-            font-family: Arial, sans-serif;
-            font-size: 0.82rem;
-            color: #444;
-            text-decoration: none;
-            padding: 5px 0 5px 10px;
+            display: block; font-family: Arial, sans-serif; font-size: 0.82rem;
+            color: #444; text-decoration: none; padding: 5px 0 5px 10px;
             border-left: 2px solid transparent;
         }
-
         .sidebar-nav a:hover, .sidebar-nav a.active {
-            color: #000;
-            border-left-color: #000;
-            font-weight: bold;
+            color: #000; border-left-color: #000; font-weight: bold;
         }
-
         .sidebar-stat {
-            font-family: Arial, sans-serif;
-            font-size: 0.78rem;
-            color: #666;
-            margin-bottom: 0.75rem;
+            font-family: Arial, sans-serif; font-size: 0.78rem;
+            color: #666; margin-bottom: 0.75rem;
         }
-
         .sidebar-stat strong {
-            display: block;
-            font-size: 1.05rem;
-            color: #000;
-            font-weight: bold;
+            display: block; font-size: 1.05rem;
+            color: #000; font-weight: bold;
         }
 
-        /* Main */
         main { flex: 1; min-width: 0; }
 
         .page-header {
-            border-bottom: 2px solid #000;
-            padding-bottom: 0.75rem;
-            margin-bottom: 1.25rem;
+            border-bottom: 2px solid #000; padding-bottom: 0.75rem; margin-bottom: 1.25rem;
         }
-
         .page-header h1 { font-size: 1.7rem; }
-
         .page-header p {
-            font-family: Arial, sans-serif;
-            font-size: 0.8rem;
-            color: #777;
-            margin-top: 0.3rem;
+            font-family: Arial, sans-serif; font-size: 0.8rem; color: #777; margin-top: 0.3rem;
         }
 
-        /* Cards */
-        .card {
-            background: #fff;
-            border: 1px solid #ddd;
-            margin-bottom: 1.25rem;
-        }
-
+        /* ── Card ──────────────────────────────────────────── */
+        .card { background: #fff; border: 1px solid #ddd; margin-bottom: 1.25rem; }
         .card-header {
-            padding: 0.8rem 1.2rem;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: baseline;
-            gap: 1rem;
+            padding: 0.8rem 1.2rem; border-bottom: 1px solid #eee;
+            display: flex; align-items: center; gap: 1rem;
         }
-
         .card-header h2 { font-size: 0.95rem; }
-
-        .card-header span {
-            font-family: Arial, sans-serif;
-            font-size: 0.73rem;
-            color: #aaa;
+        .card-header > span { font-family: Arial, sans-serif; font-size: 0.73rem; color: #aaa; }
+        .card-header .spacer { flex: 1; }
+        select {
+            font-family: Arial, sans-serif; font-size: 0.75rem; color: #333;
+            background: #fff; border: 1px solid #ccc; padding: 3px 8px;
+            cursor: pointer; outline: none;
         }
+        select:hover { border-color: #999; }
 
-        /* KPI grid */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        .kpi {
-            padding: 1rem 1.2rem;
-            border-right: 1px solid #eee;
-        }
-
+        /* ── KPI grid ───────────────────────────────────────── */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+        .kpi { padding: 1rem 1.2rem; border-right: 1px solid #eee; }
         .kpi:last-child { border-right: none; }
-
         .kpi-label {
-            font-family: Arial, sans-serif;
-            font-size: 0.62rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #aaa;
-            margin-bottom: 0.35rem;
+            font-family: Arial, sans-serif; font-size: 0.62rem;
+            text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 0.35rem;
         }
-
-        .kpi-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #000;
-            line-height: 1;
-        }
-
+        .kpi-value { font-size: 1.8rem; font-weight: bold; color: #000; line-height: 1; }
         .kpi-value.sm { font-size: 0.95rem; padding-top: 0.45rem; }
+        .kpi-sub { font-family: Arial, sans-serif; font-size: 0.68rem; color: #ccc; margin-top: 0.25rem; }
 
-        .kpi-sub {
-            font-family: Arial, sans-serif;
-            font-size: 0.68rem;
-            color: #ccc;
-            margin-top: 0.25rem;
+        /* ── Map ────────────────────────────────────────────── */
+        #map { height: 500px; width: 100%; }
+
+        .crime-marker {
+            width: 28px; height: 28px;
+            background: rgba(255,255,255,0.92);
+            border: 1.5px solid rgba(0,0,0,0.18);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .crime-marker:hover { transform: scale(1.15); }
+        .crime-marker.multi {
+            border-color: rgba(0,0,0,0.35);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.35);
         }
 
-        /* Map */
-        #map { height: 460px; width: 100%; }
+        /* ── Map legend ─────────────────────────────────────── */
+        .map-legend {
+            padding: 0.75rem 1.2rem;
+            border-top: 1px solid #f2f2f2;
+            display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem;
+            font-family: Arial, sans-serif; font-size: 0.7rem; color: #666;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
 
-        /* Footer */
+        /* ── Disclaimer ─────────────────────────────────────── */
+        .map-disclaimer {
+            padding: 0.6rem 1.2rem;
+            font-family: Arial, sans-serif; font-size: 0.68rem; color: #aaa;
+            border-top: 1px solid #f2f2f2; line-height: 1.5;
+        }
+
         footer {
-            background: #000;
-            color: #555;
-            text-align: center;
-            padding: 1rem 2rem;
-            font-family: Arial, sans-serif;
-            font-size: 0.72rem;
-            margin-top: 2rem;
+            background: #000; color: #555; text-align: center;
+            padding: 1rem 2rem; font-family: Arial, sans-serif;
+            font-size: 0.72rem; margin-top: 2rem;
         }
-
         footer a { color: #777; text-decoration: none; }
     </style>
 </head>
@@ -210,7 +153,6 @@
                 <a href="/recent">Pipeline Log</a>
             </nav>
         </div>
-
         <div class="sidebar-section">
             <div class="sidebar-label">Quick Stats</div>
             <div class="sidebar-stat">
@@ -226,7 +168,6 @@
                 Busiest neighborhood
             </div>
         </div>
-
         <div class="sidebar-section">
             <div class="sidebar-label">Sources</div>
             <nav class="sidebar-nav">
@@ -274,10 +215,20 @@
 
         <div class="card">
             <div class="card-header">
-                <h2>Crime Heatmap</h2>
-                <span>Last 30 days — up to 5,000 incidents</span>
+                <h2>Incident Map</h2>
+                <span id="mapSubtitle">Top locations — last 30 days</span>
+                <div class="spacer"></div>
+                <select id="mapPeriod">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
             </div>
             <div id="map"></div>
+            <div class="map-legend" id="mapLegend"></div>
+            <div class="map-disclaimer">
+                ℹ Incident locations are mapped to the nearest reported intersection and do not represent exact crime locations. Location data is sourced directly from SFPD Incident Reports as provided to SF Open Data.
+            </div>
         </div>
     </main>
 </div>
@@ -287,25 +238,108 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
-    const map = L.map('map').setView([37.7749, -122.4194], 12);
+// ── Category → emoji mapping ──────────────────────────────────────────────────
+const CATEGORY_EMOJI = {
+    'Motor Vehicle Theft':      '🚗',
+    'Larceny Theft':            '🎒',
+    'Drug Offense':             '💊',
+    'Assault':                  '👊',
+    'Robbery':                  '💰',
+    'Burglary':                 '🏠',
+    'Vandalism':                '🔨',
+    'Weapons Carrying Etc':     '🔫',
+    'Suspicious Occ':           '👀',
+    'Warrant':                  '⚖️',
+    'Traffic Violation Arrest': '🚦',
+    'Sexual Assault':           '⚠️',
+    'Fraud':                    '💳',
+    'Arson':                    '🔥',
+    'Missing Person':           '🔍',
+    'Vehicle Impounded':        '🅿️',
+    'Recovered Vehicle':        '🔑',
+    'Disorderly Conduct':       '📢',
+    'Other Miscellaneous':      '📋',
+};
+function emojiFor(cat) { return CATEGORY_EMOJI[cat] || '📍'; }
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CartoDB',
-        maxZoom: 18
-    }).addTo(map);
+// ── Map init ──────────────────────────────────────────────────────────────────
+const map = L.map('map').setView([37.7749, -122.4194], 13);
 
-    fetch('/api/heatmap')
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CartoDB',
+    maxZoom: 18,
+}).addTo(map);
+
+let markerLayer = L.layerGroup().addTo(map);
+
+function makeIcon(category, count) {
+    const emoji = emojiFor(category);
+    const multi = count > 1 ? ' multi' : '';
+    return L.divIcon({
+        html: `<div class="crime-marker${multi}">${emoji}</div>`,
+        className: '',
+        iconSize:   [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor:[0, -16],
+    });
+}
+
+function makePopup(d, days) {
+    const rows = d.crimes.map(c =>
+        `<tr>
+            <td style="padding:2px 6px 2px 0;">${emojiFor(c.category)}</td>
+            <td style="padding:2px 0;">${c.category}</td>
+            <td style="padding:2px 0 2px 14px; text-align:right; color:#888;">${c.count}</td>
+         </tr>`
+    ).join('');
+    return `
+        <div style="font-family:Arial,sans-serif;font-size:12px;min-width:200px;">
+            <div style="font-weight:bold;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #eee;">
+                ${d.intersection}
+            </div>
+            <div style="color:#aaa;font-size:11px;margin-bottom:6px;">
+                ${d.total} incident${d.total !== 1 ? 's' : ''} in the last ${days} days
+            </div>
+            <table style="border-collapse:collapse;width:100%;">${rows}</table>
+        </div>`;
+}
+
+function loadMap(days) {
+    document.getElementById('mapSubtitle').textContent =
+        `Top locations — last ${days} day${days !== 1 ? 's' : ''}`;
+
+    fetch(`/api/map-incidents?days=${days}`)
         .then(r => r.json())
-        .then(points => {
-            L.heatLayer(points, {
-                radius: 18,
-                blur: 25,
-                maxZoom: 15,
-                gradient: { 0.2: '#aaa', 0.5: '#555', 0.8: '#222', 1.0: '#000' }
-            }).addTo(map);
+        .then(data => {
+            markerLayer.clearLayers();
+
+            data.forEach(d => {
+                const marker = L.marker([d.lat, d.lon], {
+                    icon: makeIcon(d.top_category, d.total),
+                    title: d.intersection,
+                });
+                marker.bindPopup(makePopup(d, days), { maxWidth: 280 });
+                markerLayer.addLayer(marker);
+            });
+
+            buildLegend(data);
         });
+}
+
+function buildLegend(data) {
+    // Show only categories that actually appear in the current data
+    const seen = new Set(data.map(d => d.top_category));
+    const items = [...seen]
+        .filter(cat => CATEGORY_EMOJI[cat])
+        .sort()
+        .map(cat => `<div class="legend-item">${emojiFor(cat)} ${cat}</div>`)
+        .join('');
+    document.getElementById('mapLegend').innerHTML = items;
+}
+
+document.getElementById('mapPeriod').addEventListener('change', e => loadMap(+e.target.value));
+loadMap(30);
 </script>
 
 </body>

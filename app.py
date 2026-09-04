@@ -46,10 +46,12 @@ def index():
         """)).fetchone()
 
         top_district = conn.execute(text("""
-            SELECT police_district, SUM(incident_count) as total
-            FROM analytics.incidents_by_district
+            SELECT analysis_neighborhood, COUNT(*) AS total
+            FROM analytics.stg_incidents
             WHERE incident_date >= now() - interval '30 days'
-            GROUP BY police_district
+              AND analysis_neighborhood IS NOT NULL
+              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+            GROUP BY analysis_neighborhood
             ORDER BY total DESC
             LIMIT 1
         """)).fetchone()
@@ -472,19 +474,61 @@ def api_quarterly():
     ])
 
 
-@app.route("/api/heatmap")
-def heatmap():
+@app.route("/api/map-incidents")
+@cache.cached(query_string=True)
+def api_map_incidents():
+    from collections import defaultdict
+    days = request.args.get("days", 30, type=int)
+    interval = f"{days} days"
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT latitude, longitude
-            FROM public.incidents
-            WHERE incident_date >= now() - interval '30 days'
-              AND latitude IS NOT NULL
-              AND longitude IS NOT NULL
-            LIMIT 5000
-        """)).fetchall()
-    points = [[float(r[0]), float(r[1])] for r in rows]
-    return jsonify(points)
+            WITH by_cat AS (
+                SELECT
+                    intersection,
+                    incident_category,
+                    AVG(latitude)  AS lat,
+                    AVG(longitude) AS lon,
+                    COUNT(*)       AS cat_count
+                FROM analytics.stg_incidents
+                WHERE incident_date >= now() - interval :interval
+                  AND intersection IS NOT NULL
+                  AND latitude IS NOT NULL AND longitude IS NOT NULL
+                  AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
+                GROUP BY intersection, incident_category
+            ),
+            top_ix AS (
+                SELECT intersection, SUM(cat_count) AS total
+                FROM by_cat
+                GROUP BY intersection
+                ORDER BY total DESC
+                LIMIT 700
+            )
+            SELECT b.intersection, b.lat, b.lon, t.total, b.incident_category, b.cat_count
+            FROM top_ix t
+            JOIN by_cat b ON b.intersection = t.intersection
+            ORDER BY t.total DESC, b.cat_count DESC
+        """), {"interval": interval}).fetchall()
+
+    intersections = {}
+    for intersection, lat, lon, total, category, cat_count in rows:
+        if intersection not in intersections:
+            intersections[intersection] = {
+                "intersection": intersection,
+                "lat": round(float(lat), 6),
+                "lon": round(float(lon), 6),
+                "total": int(total),
+                "crimes": [],
+            }
+        intersections[intersection]["crimes"].append({
+            "category": category,
+            "count": int(cat_count),
+        })
+
+    result = list(intersections.values())
+    for item in result:
+        item["top_category"] = item["crimes"][0]["category"] if item["crimes"] else "Other"
+
+    return jsonify(result)
 
 
 if __name__ == "__main__":
