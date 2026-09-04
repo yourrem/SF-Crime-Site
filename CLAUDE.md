@@ -1,6 +1,6 @@
 # SF Crime Site — Project Context
 
-A Python ELT pipeline that pulls SF crime data from the SF Open Data Portal (Socrata API), loads it into Postgres, transforms it with dbt, and displays it on a Flask web app. Orchestrated with Apache Airflow.
+An end-to-end data engineering + ML pipeline pulling SF crime data from SF Open Data (Socrata API), loading into Postgres, transforming with dbt, forecasting with scikit-learn, and displaying on a Flask web app. Orchestrated with Apache Airflow.
 
 ## How to run
 
@@ -9,7 +9,7 @@ A Python ELT pipeline that pulls SF crime data from the SF Open Data Portal (Soc
 airflow standalone
 # UI at http://localhost:8080
 
-# Run the pipeline manually (useful for testing)
+# Run the pipeline manually
 python3 scripts/run_pipeline.py incidents   # auto-detects how many days are missing
 python3 scripts/run_pipeline.py calls       # last 2 hours
 python3 scripts/run_pipeline.py all         # both
@@ -17,76 +17,159 @@ python3 scripts/run_pipeline.py all         # both
 # Run dbt transformations manually
 cd sfcrime_dbt && dbt run
 
+# Retrain the forecast model manually
+python3 scripts/train_forecast.py
+
 # Start the web app
 python3 app.py
-# http://127.0.0.1:5000          — overview, KPI cards, heatmap
-# http://127.0.0.1:5000/district — by neighborhood: accordion table + charts
-# http://127.0.0.1:5000/trends   — trend charts (daily, monthly, quarterly)
-# http://127.0.0.1:5000/recent   — pipeline log (last 10 incidents + calls)
+# http://127.0.0.1:5000           — overview: KPI cards + intersection map
+# http://127.0.0.1:5000/district  — by neighborhood: date range, accordion, charts
+# http://127.0.0.1:5000/trends    — trend charts (daily, monthly, quarterly)
+# http://127.0.0.1:5000/category  — by category: date range, expandable time charts
+# http://127.0.0.1:5000/forecast  — Ridge regression forecast + confidence band
+# http://127.0.0.1:5000/recent    — pipeline log: last 10 incidents + calls
 
-# One-time historical backfill (already done — DO NOT re-run)
-python3 scripts/backfill_incidents.py
+# Full data reset (wipe + reload from Socrata)
+# 1. Truncate tables, flush Redis — see "Data reset" section below
+# 2. python3 scripts/backfill_incidents.py   (~8-10 hrs, run overnight)
+# 3. cd sfcrime_dbt && dbt run --full-refresh
+# 4. python3 scripts/train_forecast.py
 ```
 
 ## Project structure
 ```
 etl/
-  extract.py    — Socrata API calls, SoQL filtering, pagination, 30s timeout
-  transform.py  — clean_incidents(): types, dedup, flag missing location
-  load.py       — upsert() inserts new rows only (Postgres via SQLAlchemy)
+  extract.py          — Socrata API calls, SoQL filtering, pagination, 30s timeout
+  transform.py        — clean_incidents(): types, dedup, flag missing location
+  load.py             — upsert() inserts new rows only (Postgres via SQLAlchemy)
 scripts/
-  run_pipeline.py         — incremental pipeline (smart date detection + logging)
-  backfill_incidents.py   — one-time historical load, year by year (already run)
+  run_pipeline.py     — incremental pipeline (smart date detection + logging)
+  backfill_incidents.py — historical load, year-by-year (safe to re-run after TRUNCATE)
+  train_forecast.py   — Ridge regression model: reads daily_trends, writes crime_forecast
 dags/
-  sfcrime_pipeline.py     — Airflow DAGs (symlinked from ~/airflow/dags/)
+  sfcrime_pipeline.py — Airflow DAGs (symlinked from ~/airflow/dags/)
 sfcrime_dbt/
   models/staging/
-    stg_incidents.sql     — deduplicated view with data quality flags
+    stg_incidents.sql         — TABLE materialization: dedup + quality flags + indexes
     sources.yml / schema.yml
   models/marts/
-    daily_trends.sql        — daily count + 7-day rolling avg
-    incidents_by_category.sql
-    incidents_by_district.sql
+    daily_trends.sql          — daily count + 7-day rolling avg
+    incidents_by_category.sql — counts by category and date
+    incidents_by_district.sql — counts by district (has known bug — see Gotchas)
+ml/
+  forecast_model.pkl  — serialized Ridge model (gitignored, rebuilt by train_forecast.py)
 templates/
-  index.html    — overview: KPI cards + crime heatmap
-  district.html — by neighborhood: date range bar, accordion table, expand charts
-  trends.html   — trend charts: daily bar/line, monthly (year picker), quarterly
-  recent.html   — pipeline log: last 10 incidents + calls
-app.py          — Flask web server
+  index.html          — overview: KPI cards + emoji-marker intersection map + legend
+  district.html       — by neighborhood: date range, accordion, expandable charts
+  trends.html         — daily bar/line, month-by-month (year picker), all-time quarterly
+  category.html       — by category: date range, expandable time distribution charts
+  forecast.html       — actual vs predicted chart, shaded confidence band, KPI strip
+  recent.html         — pipeline log: last 10 incidents + calls
+app.py                — Flask web server + Redis caching
 logs/
-  pipeline.log  — rotating log from run_pipeline.py (5MB, 3 backups)
+  pipeline.log        — rotating log from run_pipeline.py (5MB, 3 backups)
+Dockerfile            — python:3.12-slim, gunicorn on port 8080
+Procfile              — web: gunicorn app:app
+runtime.txt           — python-3.12 (Fly.io)
 ```
 
 ## Flask routes
-- `GET /` — overview page (KPI cards, heatmap)
-- `GET /district` — by neighborhood page
-- `GET /trends` — trends page
-- `GET /recent` — pipeline log page
+Pages:
+- `GET /` — overview (KPI cards, intersection map)
+- `GET /district` — by neighborhood
+- `GET /trends` — trend charts
+- `GET /category` — by category
+- `GET /forecast` — crime forecast
+- `GET /recent` — pipeline log
+
+API (all cached via Flask-Caching + Redis, 5-min TTL):
+- `GET /api/latest-date` — MAX(incident_date) from DB; used by all pages to anchor date pickers (1hr TTL)
 - `GET /api/trends` — daily incidents + 7-day rolling avg (last 90 days)
-- `GET /api/neighborhoods?start&end&limit` — top neighborhoods (default limit=15, limit=all for no cap)
+- `GET /api/map-incidents?days=` — top 700 intersections with per-category crime breakdown
+- `GET /api/neighborhoods?start&end&limit` — top neighborhoods (default limit=15)
 - `GET /api/neighborhood/categories?neighborhood&start&end` — top 8 categories for one neighborhood
 - `GET /api/neighborhood/time?neighborhood&granularity&start&end` — time breakdown (hour/dow/month/year)
-- `GET /api/districts/summary?days` — per-district counts
-- `GET /api/districts/trends?days` — daily per-district counts for top 5 (chart data)
+- `GET /api/districts/trends?days` — daily per-district counts for top 5
 - `GET /api/monthly?year` — month-by-month counts for given year
-- `GET /api/quarterly` — all-time quarterly counts (Q1 2018 – present)
-- `GET /api/heatmap` — lat/lon points for last 30 days (up to 5,000)
+- `GET /api/quarterly` — all-time quarterly counts
+- `GET /api/categories?start&end` — top categories with incident counts
+- `GET /api/category/time?category&start&end` — hourly time distribution for a category
+- `GET /api/forecast` — actuals + 30-day predictions + confidence band
 
 ## Airflow automation
 Two DAGs in `dags/sfcrime_pipeline.py` (symlinked to `~/airflow/dags/`):
-- **sfcrime_incidents_daily** — 6am daily: `fetch_incidents → run_dbt` (sequential, dbt depends on load)
+- **sfcrime_incidents_daily** — 6am daily: `fetch_incidents → run_dbt → retrain_forecast`
 - **sfcrime_calls_realtime** — every 10 min: `fetch_calls`
 
 Both DAGs: 2 retries, 5-min retry delay, paused=False.
-Start with `airflow standalone`. DAGs will not run while the laptop is asleep — smart date detection catches up automatically on next run.
+Start with `airflow standalone`. Smart date detection catches up automatically after missed runs.
 
 ## Database
 - **Postgres**, database: `sfcrime`
-- Tables: `public.incidents` (~1M+ rows, 2018–present), `public.calls`
-- Analytics schema: `analytics.stg_incidents`, `analytics.daily_trends`, `analytics.incidents_by_category`, `analytics.incidents_by_district`
+- **Raw tables:** `public.incidents` (~1M+ rows, 2018–present), `public.calls`
+- **Analytics schema:**
+  - `analytics.stg_incidents` — TABLE (not view); deduped, quality-flagged, indexed
+  - `analytics.daily_trends` — daily counts + 7-day rolling avg
+  - `analytics.incidents_by_category` — counts by category
+  - `analytics.incidents_by_district` — counts by district (has known bug — see Gotchas)
+  - `analytics.crime_forecast` — 30-day forward predictions (written by train_forecast.py)
+  - `analytics.forecast_meta` — model metrics: MAE, RMSE, train rows, trained_at
+- **Indexes on stg_incidents:** `idx_stg_incidents_date`, `idx_stg_incidents_neighborhood_date`
 - View data: TablePlus (localhost, port 5432, db: sfcrime, no password)
 - dbt profile: `~/.dbt/profiles.yml`
-- **Known issue:** `incidents_by_district` mart has inverted `AND NOT is_valid_location` — returns 0 rows. Do NOT fix; query `stg_incidents` directly for neighborhood/district page endpoints.
+
+## Machine learning
+`scripts/train_forecast.py`:
+- Reads `analytics.daily_trends`; features: lag_1, lag_7, lag_30, day_of_week, month, year, is_weekend
+- Train/test split: 90-day holdout. Ridge(alpha=1.0). Serialized to `ml/forecast_model.pkl`
+- Recursive 30-day forward forecast; predictions + ±1 RMSE confidence band written to `analytics.crime_forecast`
+- Wired into Airflow DAG: runs nightly after `run_dbt`
+- As of last full reset (2026-09): MAE ~27.7/day, RMSE ~36.2 on 3,039-day training set
+
+## Caching
+Flask-Caching with Redis (5-min default TTL). Falls back to SimpleCache if `REDIS_URL` is not set.
+```python
+if os.getenv("REDIS_URL"):
+    cache = Cache(app, config={"CACHE_TYPE": "RedisCache", "CACHE_REDIS_URL": os.getenv("REDIS_URL"), ...})
+else:
+    cache = Cache(app, config={"CACHE_TYPE": "SimpleCache", ...})
+```
+Start Redis locally: `redis-server --daemonize yes --logfile /tmp/redis.log`
+Clear cache: `redis-cli FLUSHDB`
+
+## Data reset procedure
+Use when doing a full sanity-check reset:
+```bash
+# 1. Pause Airflow
+airflow dags pause sfcrime_incidents_daily
+airflow dags pause sfcrime_calls_realtime
+
+# 2. Clear Redis
+redis-cli FLUSHDB
+
+# 3. Truncate tables (in psql sfcrime)
+TRUNCATE public.incidents;
+TRUNCATE public.calls;
+TRUNCATE analytics.crime_forecast;
+TRUNCATE analytics.forecast_meta;
+
+# 4. Delete stale model
+rm -f ml/forecast_model.pkl
+
+# 5. Re-run backfill (8-10 hrs — run overnight)
+python3 scripts/backfill_incidents.py
+
+# 6. Rebuild dbt analytics tables
+cd sfcrime_dbt && dbt run --full-refresh
+
+# 7. Retrain forecast
+cd .. && python3 scripts/train_forecast.py
+
+# 8. Unpause Airflow
+airflow dags unpause sfcrime_incidents_daily
+airflow dags unpause sfcrime_calls_realtime
+```
+Note: `backfill_incidents.py` is safe to re-run as long as you TRUNCATE first.
 
 ## Data sources
 Both from data.sfgov.org (Socrata API — `SOCRATA_APP_TOKEN` in `.env`):
@@ -99,6 +182,7 @@ Both from data.sfgov.org (Socrata API — `SOCRATA_APP_TOKEN` in `.env`):
 SOCRATA_APP_TOKEN=your_token_here
 POSTGRES_URL=postgresql://localhost/sfcrime
 ```
+For Fly.io: app reads `POSTGRES_URL` then falls back to `DATABASE_URL` (auto-set by Fly when Postgres is attached). `REDIS_URL` must be set manually via `fly secrets set`.
 
 ## Chart color palette
 10-color muted palette used consistently across all Chart.js charts:
@@ -115,46 +199,20 @@ function colorFor(name) {
 ```
 Hash is stable — a name always maps to the same color regardless of sort order.
 
-## SQLAlchemy gotcha
-Using `text()` with `:name` syntax for bind parameters. Avoid putting literal colons followed by digits in SQL strings (e.g. `':00'` is parsed as bind param `00`). Use `chr(58)` to produce a colon at the Postgres level instead:
-```python
-# Bad — SQLAlchemy parses :00 as a bind parameter
-"to_char(..., 'FM00') || ':00'"
-# Good
-"to_char(incident_datetime, 'HH24') || chr(58) || '00'"
-```
+## Gotchas
+- **`incidents_by_district` bug** — mart has inverted `AND NOT is_valid_location` filter, returns 0 rows. Do NOT fix. All district/neighborhood API endpoints query `analytics.stg_incidents` directly instead.
+- **SQLAlchemy text() colon parsing** — `':00'` is parsed as bind param `00`. Use `chr(58)` to produce a literal colon in SQL strings.
+- **JS let/const TDZ** — don't call functions that reference `let`/`const` variables before their declaration line in the same script block.
+- **Fly.io env** — `POSTGRES_URL` is not auto-set; app falls back to `DATABASE_URL`. `REDIS_URL` must be set manually.
+- **Date range anchoring** — all date-picker pages fetch `/api/latest-date` on init and anchor range buttons to `MAX(incident_date)`, not `new Date()`. This prevents 24h/7d tabs from returning no data when the pipeline hasn't run today.
+- **`/api/map-incidents` CTE** — groups incidents by intersection with full per-category breakdown. The `top_ix` CTE limits to 700 intersections before joining back to category rows to avoid returning 10k+ rows.
 
 ## Key decisions
-- **ELT not ETL** — raw data lands in Postgres untouched; dbt handles all business-logic transformations
-- **Upsert, never replace** — `upsert()` uses staging table + `WHERE NOT IN` to skip duplicates; 1M rows are never wiped
-- **Smart date detection** — `run_incidents()` queries `MAX(incident_date)` to auto-calculate how many days to fetch; self-healing if runs are missed
+- **ELT not ETL** — raw data lands in Postgres untouched; dbt handles all transformations
+- **Upsert, never replace** — `upsert()` uses staging table + `WHERE NOT IN`; 1M rows never wiped
+- **Smart date detection** — `run_incidents()` queries `MAX(incident_date)` to auto-calculate missing days
 - **Backfill year-by-year** — Socrata times out at high offsets; chunking by year avoids this
-- **Flag, don't delete** — bad data (`is_unfounded`, `is_non_criminal`, `is_valid_location`) flagged in dbt staging; mart models filter by flags
-- **dict columns dropped at load** — Socrata GeoJSON columns can't go into Postgres as-is; dropped in `_prepare()`
-- **Python logging module** — rotating file handler in `logs/pipeline.log`; replaces print statements
-
-## Completed steps
-1. ✅ Pull daily incidents from Socrata API
-2. ✅ Explore with pandas (notebook)
-3. ✅ SoQL filtering + pagination
-4. ✅ `clean_incidents()` — types, dedup, location flag
-5. ✅ Store in database via `df.to_sql()`
-6. ✅ Chain into `run_pipeline.py`
-7. ✅ Real-time calls feed with upsert
-8. ✅ Migrated to Postgres
-9. ✅ Full historical backfill (1M+ rows, 2018–2026)
-10. ✅ dbt staging model — dedup + data quality flags
-11. ✅ dbt mart models — daily_trends, incidents_by_category, incidents_by_district
-12. ✅ Flask web app — KPI cards, crime heatmap, pipeline log page
-13. ✅ Airflow DAGs — replaced cron, full pipeline orchestration with retries
-14. ✅ Smart date detection — auto catch-up if runs are missed
-15. ✅ Structured logging — Python logging module with rotation
-16. ✅ Trends page — daily bar/line chart, month-by-month (year picker), all-time quarterly
-17. ✅ By Neighborhood page — date range bar, accordion neighborhood table, expandable category + time charts, show all toggle
-18. ✅ Chart color palette — 10-color muted scheme with stable name-to-color hash
-
-## Next steps (pick one)
-- **PostGIS** — geospatial extension for neighborhood polygon queries and map overlays
-- **By Category page** — drill into incident types, trend over time per category
-- **Airflow cloud** — deploy to a VM so pipeline runs 24/7 without the laptop
-- **Year-over-year dbt model** — compare this year vs last year per neighborhood/category
+- **Flag, don't delete** — bad data flagged in dbt staging (`is_unfounded`, `is_non_criminal`, `is_valid_location`); mart models filter
+- **stg_incidents as TABLE** — materialized as table (not view) with composite indexes; eliminates full table scans on API queries
+- **Redis with SimpleCache fallback** — app starts cleanly without Redis; Fly.io sets REDIS_URL in secrets
+- **Recursive forecast** — each predicted value feeds next day's lag inputs; avoids data leakage in forward projection
