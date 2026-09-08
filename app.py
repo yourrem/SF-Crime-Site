@@ -1,4 +1,6 @@
 import os
+import numpy as np
+from sklearn.cluster import KMeans
 from flask import Flask, render_template, jsonify, request
 from flask_caching import Cache
 from sqlalchemy import create_engine, text
@@ -184,6 +186,105 @@ def district():
 @app.route("/category")
 def category():
     return render_template("category.html")
+
+
+@app.route("/clusters")
+def clusters():
+    return render_template("clusters.html")
+
+
+@app.route("/api/crime-clusters")
+@cache.cached(query_string=True)
+def api_crime_clusters():
+    from collections import Counter
+    days = request.args.get("days", 30, type=int)
+    k    = max(2, min(request.args.get("k", 15, type=int), 30))
+    interval = f"{days} days"
+
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT latitude, longitude, incident_category
+            FROM analytics.stg_incidents
+            WHERE incident_date >= now() - interval :interval
+              AND is_valid_location AND NOT is_unfounded AND NOT is_non_criminal
+              AND latitude IS NOT NULL AND longitude IS NOT NULL
+            ORDER BY RANDOM() LIMIT 8000
+        """), {"interval": interval}).fetchall()
+
+    if len(rows) < k:
+        return jsonify([])
+
+    coords     = np.array([[r[0], r[1]] for r in rows], dtype=np.float64)
+    categories = [r[2] for r in rows]
+    labels     = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(coords)
+
+    out = []
+    for cid in range(k):
+        mask  = labels == cid
+        pts   = coords[mask]
+        cats  = [categories[i] for i, m in enumerate(mask) if m]
+        clat  = float(pts[:, 0].mean())
+        clon  = float(pts[:, 1].mean())
+        lat_m = float(pts[:, 0].std()) * 111139
+        lon_m = float(pts[:, 1].std()) * 111139 * abs(np.cos(np.radians(clat)))
+        out.append({
+            "cluster_id":     cid,
+            "lat":            round(clat, 6),
+            "lon":            round(clon, 6),
+            "count":          int(mask.sum()),
+            "radius_m":       max(300, min(int(max(lat_m, lon_m)), 4000)),
+            "top_categories": [{"category": c, "count": n}
+                               for c, n in Counter(cats).most_common(5)],
+        })
+    return jsonify(out)
+
+
+@app.route("/api/neighborhood-clusters")
+@cache.cached(query_string=True)
+def api_neighborhood_clusters():
+    import math
+    from collections import Counter
+    days     = request.args.get("days", 30, type=int)
+    interval = f"{days} days"
+
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT analysis_neighborhood,
+                   AVG(latitude) AS clat, AVG(longitude) AS clon,
+                   COUNT(*) AS cnt,
+                   STDDEV_POP(latitude) AS lat_std, STDDEV_POP(longitude) AS lon_std,
+                   array_agg(incident_category ORDER BY incident_category) AS cats
+            FROM analytics.stg_incidents
+            WHERE incident_date >= now() - interval :interval
+              AND analysis_neighborhood IS NOT NULL
+              AND is_valid_location AND NOT is_unfounded AND NOT is_non_criminal
+              AND latitude IS NOT NULL AND longitude IS NOT NULL
+            GROUP BY analysis_neighborhood ORDER BY cnt DESC
+        """), {"interval": interval}).fetchall()
+
+    if not rows:
+        return jsonify([])
+
+    max_count = max(r[3] for r in rows)
+    out = []
+    for name, clat, clon, cnt, lat_std, lon_std, cats in rows:
+        clat, clon = float(clat), float(clon)
+        cnt        = int(cnt)
+        lat_m      = float(lat_std or 0) * 111139
+        lon_m      = float(lon_std or 0) * 111139 * abs(math.cos(math.radians(clat)))
+        out.append({
+            "neighborhood":   name,
+            "lat":            round(clat, 6),
+            "lon":            round(clon, 6),
+            "count":          cnt,
+            "radius_m":       max(300, min(int(max(lat_m, lon_m)), 3000)),
+            "opacity":        round(0.15 + (cnt / max_count) * 0.70, 3),
+            "top_categories": [{"category": c, "count": n}
+                               for c, n in Counter(
+                                   c for c in (cats or []) if c
+                               ).most_common(3)],
+        })
+    return jsonify(out)
 
 
 @app.route("/api/categories")
