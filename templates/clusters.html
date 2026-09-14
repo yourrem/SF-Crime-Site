@@ -1,214 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crime Clusters — SF Crime Tracker</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Georgia, serif; background: #f0f0f0; color: #111; }
+{% extends "base.html" %}
 
-        header {
-            background: #000; color: #fff;
-            padding: 14px 2rem;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .site-name { font-size: 1.3rem; font-weight: bold; }
-        .header-meta {
-            font-family: Arial, sans-serif; font-size: 0.72rem;
-            color: #888; letter-spacing: 1px; text-transform: uppercase;
-        }
+{% block title %}Crime Clusters — SF Crime Desk{% endblock %}
 
-        .layout {
-            display: flex; gap: 1.5rem;
-            max-width: 1280px; margin: 1.5rem auto;
-            padding: 0 1.5rem; align-items: flex-start;
-        }
-        aside { width: 190px; flex-shrink: 0; }
-        .sidebar-section { margin-bottom: 1.75rem; }
-        .sidebar-label {
-            font-family: Arial, sans-serif; font-size: 0.62rem; font-weight: bold;
-            letter-spacing: 2px; text-transform: uppercase; color: #999;
-            padding-bottom: 0.4rem; border-bottom: 1px solid #ccc; margin-bottom: 0.5rem;
-        }
-        .sidebar-nav a {
-            display: block; font-family: Arial, sans-serif; font-size: 0.82rem;
-            color: #444; text-decoration: none; padding: 5px 0 5px 10px;
-            border-left: 2px solid transparent;
-        }
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            color: #000; border-left-color: #000; font-weight: bold;
-        }
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>#map { height: 600px; }</style>
+{% endblock %}
 
-        main { flex: 1; min-width: 0; }
-
-        .page-header {
-            border-bottom: 2px solid #000; padding-bottom: 0.75rem; margin-bottom: 1.25rem;
-        }
-        .page-header h1 { font-size: 1.7rem; }
-        .page-header p {
-            font-family: Arial, sans-serif; font-size: 0.8rem; color: #777; margin-top: 0.3rem;
-        }
-
-        /* ── Controls bar ───────────────────────────────────── */
-        .controls-bar {
-            background: #fff; border: 1px solid #ddd;
-            padding: 0.65rem 1rem; margin-bottom: 1.25rem;
-            display: flex; align-items: center; gap: 0.6rem;
-            font-family: Arial, sans-serif; flex-wrap: wrap;
-        }
-        .ctrl-label {
-            font-size: 0.62rem; text-transform: uppercase;
-            letter-spacing: 1px; color: #bbb; white-space: nowrap;
-        }
-        .ctrl-sep {
-            width: 1px; height: 20px; background: #eee; margin: 0 0.15rem; flex-shrink: 0;
-        }
-        .ctrl-btn {
-            font-family: Arial, sans-serif; font-size: 0.75rem;
-            background: none; border: 1px solid #ddd; color: #555;
-            padding: 4px 10px; cursor: pointer; white-space: nowrap;
-        }
-        .ctrl-btn:hover { border-color: #999; color: #111; }
-        .ctrl-btn.active { background: #000; color: #fff; border-color: #000; }
-
-        /* ── Card + Map ─────────────────────────────────────── */
-        .card { background: #fff; border: 1px solid #ddd; margin-bottom: 1.25rem; }
-        .card-header {
-            padding: 0.8rem 1.2rem; border-bottom: 1px solid #eee;
-            display: flex; align-items: center; gap: 1rem;
-        }
-        .card-header h2 { font-size: 0.95rem; }
-        .card-header > span { font-family: Arial, sans-serif; font-size: 0.73rem; color: #aaa; }
-        #map { height: 600px; width: 100%; }
-
-        /* ── Legend bar ─────────────────────────────────────── */
-        .map-legend-bar {
-            padding: 0.65rem 1.2rem;
-            border-top: 1px solid #f2f2f2;
-            display: flex; align-items: center; gap: 0.6rem;
-            font-family: Arial, sans-serif; font-size: 0.68rem; color: #aaa;
-            flex-wrap: wrap; min-height: 38px;
-        }
-        .legend-bar-label {
-            font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px;
-            color: #bbb; margin-right: 0.3rem; white-space: nowrap;
-        }
-        .legend-swatch {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 0.68rem; color: #666; white-space: nowrap;
-        }
-        .swatch-dot {
-            width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; opacity: 0.7;
-        }
-        .legend-count { font-size: 0.62rem; color: #bbb; margin-left: 2px; }
-
-        /* ── Disclaimer ─────────────────────────────────────── */
-        .map-disclaimer {
-            padding: 0.6rem 1.2rem;
-            font-family: Arial, sans-serif; font-size: 0.68rem; color: #aaa;
-            border-top: 1px solid #f2f2f2; line-height: 1.5;
-        }
-
-        footer {
-            background: #000; color: #555; text-align: center;
-            padding: 1rem 2rem; font-family: Arial, sans-serif;
-            font-size: 0.72rem; margin-top: 2rem;
-        }
-        footer a { color: #777; text-decoration: none; }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="site-name">SF Crime Tracker</div>
-    <div class="header-meta">San Francisco Public Safety Data</div>
-</header>
-
-<div class="layout">
-    <aside>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Navigation</div>
-            <nav class="sidebar-nav">
-                <a href="/">Overview</a>
-                <a href="/district">By Neighborhood</a>
-                <a href="/category">By Category</a>
-                <a href="/trends">Trends</a>
-                <a href="/forecast">Forecast</a>
-                <a href="/recent">Pipeline Log</a>
-                <a href="/clusters" class="active">Crime Clusters</a>
-            </nav>
-        </div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Sources</div>
-            <nav class="sidebar-nav">
-                <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
-            </nav>
-        </div>
-    </aside>
-
-    <main>
-        <div class="page-header">
-            <h1>Crime Clusters</h1>
-            <p>Spatial clustering of SF crime incidents using K-Means. Switch between geographic hotspot clusters and neighborhood-level density.</p>
-        </div>
-
-        <!-- Controls -->
-        <div class="controls-bar">
-            <span class="ctrl-label">View</span>
-            <button class="ctrl-btn active" id="modeHotspot">Crime Hotspots</button>
-            <button class="ctrl-btn" id="modeNeighborhood">Neighborhood Density</button>
-
-            <div class="ctrl-sep"></div>
-
-            <span class="ctrl-label">Period</span>
-            <button class="ctrl-btn period-btn active" data-days="30">30d</button>
-            <button class="ctrl-btn period-btn" data-days="90">90d</button>
-            <button class="ctrl-btn period-btn" data-days="365">1yr</button>
-
-            <div class="ctrl-sep" id="kSep"></div>
-
-            <span class="ctrl-label" id="kLabel">Clusters (K)</span>
-            <button class="ctrl-btn k-btn" data-k="5">5</button>
-            <button class="ctrl-btn k-btn" data-k="10">10</button>
-            <button class="ctrl-btn k-btn active" data-k="15">15</button>
-            <button class="ctrl-btn k-btn" data-k="20">20</button>
-        </div>
-
-        <!-- Map -->
-        <div class="card">
-            <div class="card-header">
-                <h2 id="mapTitle">Crime Hotspots</h2>
-                <span id="mapSubtitle">Loading...</span>
-            </div>
-            <div id="map"></div>
-            <div class="map-legend-bar" id="mapLegend"></div>
-            <div class="map-disclaimer">
-                ℹ Clusters are computed using K-Means on a random sample of up to 8,000 incidents from the selected period.
-                Circle size reflects the geographic spread of incidents within each cluster.
-                Neighborhood circles are centered at the average incident location and may not match official neighborhood boundaries.
-            </div>
-        </div>
-    </main>
+{% block content %}
+<div class="page-header">
+    <h1>Crime Clusters</h1>
+    <p>Spatial clustering of SF crime incidents using K-Means. Switch between geographic hotspot clusters and neighborhood-level density.</p>
 </div>
 
-<footer>
-    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
-</footer>
+<div class="controls-bar">
+    <span class="ctrl-label">View</span>
+    <button class="ctrl-btn active" id="modeHotspot">Crime Hotspots</button>
+    <button class="ctrl-btn" id="modeNeighborhood">Neighborhood Density</button>
 
+    <div class="ctrl-sep"></div>
+
+    <span class="ctrl-label">Period</span>
+    <button class="ctrl-btn period-btn active" data-days="30">30d</button>
+    <button class="ctrl-btn period-btn" data-days="90">90d</button>
+    <button class="ctrl-btn period-btn" data-days="365">1yr</button>
+
+    <div class="ctrl-sep" id="kSep"></div>
+
+    <span class="ctrl-label" id="kLabel">Clusters (K)</span>
+    <button class="ctrl-btn k-btn" data-k="5">5</button>
+    <button class="ctrl-btn k-btn" data-k="10">10</button>
+    <button class="ctrl-btn k-btn active" data-k="15">15</button>
+    <button class="ctrl-btn k-btn" data-k="20">20</button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 id="mapTitle">Crime Hotspots</h2>
+        <span id="mapSubtitle">Loading...</span>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend-bar" id="mapLegend"></div>
+    <div class="map-disclaimer">
+        ℹ Clusters are computed using K-Means on a random sample of up to 8,000 incidents from the selected period.
+        Circle size reflects the geographic spread of incidents within each cluster.
+        Neighborhood circles are centered at the average incident location and may not match official neighborhood boundaries.
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const PALETTE = [
-    '#5B8DB8','#5A9990','#6A9E78','#8E9E5A','#C4952E',
-    '#C4714E','#B07A8A','#8E7AAB','#7A82B5','#9B7B4A',
+    '#2D5FA6', '#8B1A1A', '#1A6B3C', '#7B4F1A', '#4A2D8B',
+    '#1A5E6B', '#8B6B1A', '#6B1A4A', '#3D7A4A', '#4A4A8B',
 ];
-const NBHD_COLOR = '#C4714E';
+const NBHD_COLOR = '#8B1A1A';
 const fmt = n => Number(n).toLocaleString();
 
-// ── Map init ──────────────────────────────────────────────────────
 const map = L.map('map').setView([37.7749, -122.4194], 12);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CartoDB',
@@ -218,12 +68,10 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 const clusterLayer      = L.layerGroup().addTo(map);
 const neighborhoodLayer = L.layerGroup();
 
-// ── State ─────────────────────────────────────────────────────────
 let currentMode = 'hotspot';
 let currentDays = 30;
 let currentK    = 15;
 
-// ── Render: Crime Hotspots ────────────────────────────────────────
 function renderHotspots(data) {
     clusterLayer.clearLayers();
 
@@ -240,8 +88,8 @@ function renderHotspots(data) {
         const color = PALETTE[c.cluster_id % PALETTE.length];
         const topRows = c.top_categories.map(t =>
             `<tr>
-                <td style="padding:2px 8px 2px 0;color:#888;">${t.category}</td>
-                <td style="text-align:right;color:#555;font-family:monospace;">${fmt(t.count)}</td>
+                <td style="padding:2px 8px 2px 0;color:#888;font-family:'Lora',serif;">${t.category}</td>
+                <td style="text-align:right;color:#555;font-family:'DM Mono',monospace;">${fmt(t.count)}</td>
              </tr>`
         ).join('');
 
@@ -254,16 +102,16 @@ function renderHotspots(data) {
         });
 
         circle.bindPopup(`
-            <div style="font-family:Arial,sans-serif;font-size:12px;min-width:200px;">
-                <div style="font-weight:bold;margin-bottom:5px;padding-bottom:5px;
-                            border-bottom:1px solid #eee;color:${color};">
+            <div style="font-family:'Lora',serif;font-size:13px;min-width:200px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:bold;margin-bottom:5px;
+                            padding-bottom:5px;border-bottom:1px solid #ddd;color:${color};">
                     Cluster #${c.cluster_id + 1}
                 </div>
-                <div style="color:#aaa;font-size:11px;margin-bottom:6px;">
+                <div style="color:#888;font-family:'Source Serif 4',serif;font-size:11px;margin-bottom:6px;">
                     ${fmt(c.count)} incidents &nbsp;·&nbsp; radius ~${fmt(c.radius_m)} m
                 </div>
-                <div style="font-size:11px;color:#aaa;margin-bottom:4px;
-                            text-transform:uppercase;letter-spacing:1px;">Top Crime Types</div>
+                <div style="font-size:10px;color:#aaa;margin-bottom:4px;
+                            text-transform:uppercase;letter-spacing:1px;font-family:'Source Serif 4',serif;">Top Crime Types</div>
                 <table style="border-collapse:collapse;width:100%;">${topRows}</table>
             </div>`, { maxWidth: 280 });
 
@@ -273,7 +121,6 @@ function renderHotspots(data) {
     document.getElementById('mapSubtitle').textContent =
         `${data.length} clusters — ${fmt(totalIncidents)} incidents sampled`;
 
-    // Legend
     const legendEl = document.getElementById('mapLegend');
     legendEl.innerHTML =
         `<span class="legend-bar-label">Clusters</span>` +
@@ -287,7 +134,6 @@ function renderHotspots(data) {
         }).join('');
 }
 
-// ── Render: Neighborhood Density ──────────────────────────────────
 function renderNeighborhoods(data) {
     neighborhoodLayer.clearLayers();
 
@@ -300,8 +146,8 @@ function renderNeighborhoods(data) {
     data.forEach(n => {
         const topRows = n.top_categories.map(t =>
             `<tr>
-                <td style="padding:2px 8px 2px 0;color:#888;">${t.category}</td>
-                <td style="text-align:right;color:#555;font-family:monospace;">${fmt(t.count)}</td>
+                <td style="padding:2px 8px 2px 0;color:#888;font-family:'Lora',serif;">${t.category}</td>
+                <td style="text-align:right;color:#555;font-family:'DM Mono',monospace;">${fmt(t.count)}</td>
              </tr>`
         ).join('');
 
@@ -314,42 +160,39 @@ function renderNeighborhoods(data) {
         });
 
         circle.bindPopup(`
-            <div style="font-family:Arial,sans-serif;font-size:12px;min-width:200px;">
-                <div style="font-weight:bold;margin-bottom:5px;padding-bottom:5px;
-                            border-bottom:1px solid #eee;">
+            <div style="font-family:'Lora',serif;font-size:13px;min-width:200px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:bold;margin-bottom:5px;
+                            padding-bottom:5px;border-bottom:1px solid #ddd;">
                     ${n.neighborhood}
                 </div>
-                <div style="color:#aaa;font-size:11px;margin-bottom:6px;">
+                <div style="color:#888;font-family:'Source Serif 4',serif;font-size:11px;margin-bottom:6px;">
                     ${fmt(n.count)} incidents — last ${currentDays} days
                 </div>
-                <div style="font-size:11px;color:#aaa;margin-bottom:4px;
-                            text-transform:uppercase;letter-spacing:1px;">Top Crime Types</div>
+                <div style="font-size:10px;color:#aaa;margin-bottom:4px;
+                            text-transform:uppercase;letter-spacing:1px;font-family:'Source Serif 4',serif;">Top Crime Types</div>
                 <table style="border-collapse:collapse;width:100%;">${topRows}</table>
             </div>`, { maxWidth: 280 });
 
         neighborhoodLayer.addLayer(circle);
     });
 
-    document.getElementById('mapSubtitle').textContent =
-        `${data.length} neighborhoods`;
+    document.getElementById('mapSubtitle').textContent = `${data.length} neighborhoods`;
 
-    // Legend — opacity gradient
     document.getElementById('mapLegend').innerHTML = `
         <span class="legend-bar-label">Density</span>
         <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:0.65rem;color:#bbb;">Low</span>
-            <div style="width:120px;height:12px;border-radius:2px;
+            <span style="font-size:0.65rem;color:#bbb;font-family:'Source Serif 4',serif;">Low</span>
+            <div style="width:120px;height:12px;border-radius:1px;
                         background:linear-gradient(to right,
-                            rgba(196,113,78,0.15), rgba(196,113,78,0.85));
-                        border:1px solid #eee;"></div>
-            <span style="font-size:0.65rem;color:#bbb;">High</span>
+                            rgba(139,26,26,0.15), rgba(139,26,26,0.85));
+                        border:1px solid #ddd;"></div>
+            <span style="font-size:0.65rem;color:#bbb;font-family:'Source Serif 4',serif;">High</span>
         </div>
-        <span style="font-size:0.65rem;color:#bbb;margin-left:0.5rem;">
+        <span style="font-size:0.65rem;color:#bbb;margin-left:0.5rem;font-family:'Source Serif 4',serif;">
             Circle size = geographic spread of incidents
         </span>`;
 }
 
-// ── Load ──────────────────────────────────────────────────────────
 function loadHotspots() {
     document.getElementById('mapSubtitle').textContent = 'Loading...';
     fetch(`/api/crime-clusters?days=${currentDays}&k=${currentK}`)
@@ -369,10 +212,8 @@ function reload() {
     else loadNeighborhoods();
 }
 
-// ── Mode switching ────────────────────────────────────────────────
 function setMode(mode) {
     currentMode = mode;
-
     document.getElementById('modeHotspot').classList.toggle('active', mode === 'hotspot');
     document.getElementById('modeNeighborhood').classList.toggle('active', mode === 'neighborhood');
 
@@ -395,7 +236,6 @@ function setMode(mode) {
     }
 }
 
-// ── Event wiring ──────────────────────────────────────────────────
 document.getElementById('modeHotspot').addEventListener('click', () => setMode('hotspot'));
 document.getElementById('modeNeighborhood').addEventListener('click', () => setMode('neighborhood'));
 
@@ -417,9 +257,6 @@ document.querySelectorAll('.k-btn').forEach(btn => {
     });
 });
 
-// ── Init (must be last — TDZ safety) ─────────────────────────────
 setMode('hotspot');
 </script>
-
-</body>
-</html>
+{% endblock %}

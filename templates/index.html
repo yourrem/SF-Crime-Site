@@ -1,286 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SF Crime Tracker</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+{% extends "base.html" %}
 
-        body { font-family: Georgia, serif; background: #f0f0f0; color: #111; }
+{% block title %}SF Crime Desk{% endblock %}
 
-        header {
-            background: #000; color: #fff;
-            padding: 14px 2rem;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .site-name { font-size: 1.3rem; font-weight: bold; }
-        .header-meta {
-            font-family: Arial, sans-serif; font-size: 0.72rem;
-            color: #888; letter-spacing: 1px; text-transform: uppercase;
-        }
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>#map { height: 500px; }</style>
+{% endblock %}
 
-        .layout {
-            display: flex; gap: 1.5rem;
-            max-width: 1280px; margin: 1.5rem auto;
-            padding: 0 1.5rem; align-items: flex-start;
-        }
-
-        aside { width: 190px; flex-shrink: 0; }
-        .sidebar-section { margin-bottom: 1.75rem; }
-        .sidebar-label {
-            font-family: Arial, sans-serif; font-size: 0.62rem; font-weight: bold;
-            letter-spacing: 2px; text-transform: uppercase; color: #999;
-            padding-bottom: 0.4rem; border-bottom: 1px solid #ccc; margin-bottom: 0.5rem;
-        }
-        .sidebar-nav a {
-            display: block; font-family: Arial, sans-serif; font-size: 0.82rem;
-            color: #444; text-decoration: none; padding: 5px 0 5px 10px;
-            border-left: 2px solid transparent;
-        }
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            color: #000; border-left-color: #000; font-weight: bold;
-        }
-        .sidebar-stat {
-            font-family: Arial, sans-serif; font-size: 0.78rem;
-            color: #666; margin-bottom: 0.75rem;
-        }
-        .sidebar-stat strong {
-            display: block; font-size: 1.05rem;
-            color: #000; font-weight: bold;
-        }
-
-        main { flex: 1; min-width: 0; }
-
-        .page-header {
-            border-bottom: 2px solid #000; padding-bottom: 0.75rem; margin-bottom: 1.25rem;
-        }
-        .page-header h1 { font-size: 1.7rem; }
-        .page-header p {
-            font-family: Arial, sans-serif; font-size: 0.8rem; color: #777; margin-top: 0.3rem;
-        }
-
-        /* ── Card ──────────────────────────────────────────── */
-        .card { background: #fff; border: 1px solid #ddd; margin-bottom: 1.25rem; }
-        .card-header {
-            padding: 0.8rem 1.2rem; border-bottom: 1px solid #eee;
-            display: flex; align-items: center; gap: 1rem;
-        }
-        .card-header h2 { font-size: 0.95rem; }
-        .card-header > span { font-family: Arial, sans-serif; font-size: 0.73rem; color: #aaa; }
-        .card-header .spacer { flex: 1; }
-        select {
-            font-family: Arial, sans-serif; font-size: 0.75rem; color: #333;
-            background: #fff; border: 1px solid #ccc; padding: 3px 8px;
-            cursor: pointer; outline: none;
-        }
-        select:hover { border-color: #999; }
-
-        /* ── KPI grid ───────────────────────────────────────── */
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
-        .kpi { padding: 1rem 1.2rem; border-right: 1px solid #eee; }
-        .kpi:last-child { border-right: none; }
-        .kpi-label {
-            font-family: Arial, sans-serif; font-size: 0.62rem;
-            text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 0.35rem;
-        }
-        .kpi-value { font-size: 1.8rem; font-weight: bold; color: #000; line-height: 1; }
-        .kpi-value.sm { font-size: 0.95rem; padding-top: 0.45rem; }
-        .kpi-sub { font-family: Arial, sans-serif; font-size: 0.68rem; color: #ccc; margin-top: 0.25rem; }
-
-        /* ── Map ────────────────────────────────────────────── */
-        #map { height: 500px; width: 100%; }
-
-        .crime-marker {
-            width: 28px; height: 28px;
-            background: rgba(255,255,255,0.92);
-            border: 1.5px solid rgba(0,0,0,0.18);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .crime-marker:hover { transform: scale(1.15); }
-        .crime-marker.multi {
-            border-color: rgba(0,0,0,0.35);
-            box-shadow: 0 1px 6px rgba(0,0,0,0.35);
-        }
-
-        /* ── Map legend ─────────────────────────────────────── */
-        .map-legend-bar {
-            padding: 0.65rem 1.2rem;
-            border-top: 1px solid #f2f2f2;
-            display: flex; align-items: center; gap: 0.6rem;
-            font-family: Arial, sans-serif; font-size: 0.68rem; color: #aaa;
-            flex-wrap: wrap;
-        }
-        .legend-bar-label {
-            font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px;
-            color: #bbb; margin-right: 0.3rem; white-space: nowrap;
-        }
-        .legend-item {
-            display: flex; align-items: center; gap: 4px;
-            padding: 3px 9px; border-radius: 20px;
-            border: 1px solid #e0e0e0; cursor: pointer;
-            color: #555; background: #fff;
-            transition: opacity 0.15s, background 0.15s;
-            user-select: none; white-space: nowrap;
-        }
-        .legend-item:hover { border-color: #aaa; }
-        .legend-item.inactive { opacity: 0.28; }
-        .legend-count {
-            font-size: 0.62rem; color: #999; margin-left: 2px;
-        }
-        .legend-reset {
-            margin-left: auto; font-size: 0.68rem; color: #bbb;
-            cursor: pointer; text-decoration: underline;
-            text-underline-offset: 2px; white-space: nowrap;
-            background: none; border: none; font-family: Arial, sans-serif;
-        }
-        .legend-reset:hover { color: #666; }
-        .legend-unselect {
-            font-size: 0.68rem; color: #bbb; cursor: pointer;
-            text-decoration: underline; text-underline-offset: 2px;
-            white-space: nowrap; background: none; border: none;
-            font-family: Arial, sans-serif;
-        }
-        .legend-unselect:hover { color: #666; }
-        .legend-toggle {
-            font-size: 0.68rem; color: #bbb; cursor: pointer;
-            white-space: nowrap; background: none; border: none;
-            font-family: Arial, sans-serif; padding: 2px 4px;
-        }
-        .legend-toggle:hover { color: #666; }
-        .legend-showing {
-            font-size: 0.65rem; color: #bbb; white-space: nowrap;
-        }
-
-        /* ── Disclaimer ─────────────────────────────────────── */
-        .map-disclaimer {
-            padding: 0.6rem 1.2rem;
-            font-family: Arial, sans-serif; font-size: 0.68rem; color: #aaa;
-            border-top: 1px solid #f2f2f2; line-height: 1.5;
-        }
-
-        footer {
-            background: #000; color: #555; text-align: center;
-            padding: 1rem 2rem; font-family: Arial, sans-serif;
-            font-size: 0.72rem; margin-top: 2rem;
-        }
-        footer a { color: #777; text-decoration: none; }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="site-name">SF Crime Tracker</div>
-    <div class="header-meta">San Francisco Public Safety Data</div>
-</header>
-
-<div class="layout">
-    <aside>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Navigation</div>
-            <nav class="sidebar-nav">
-                <a href="/" class="active">Overview</a>
-                <a href="/district">By Neighborhood</a>
-                <a href="/category">By Category</a>
-                <a href="/trends">Trends</a>
-                <a href="/forecast">Forecast</a>
-                <a href="/recent">Pipeline Log</a>
-                <a href="/clusters">Crime Clusters</a>
-            </nav>
-        </div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Quick Stats</div>
-            <div class="sidebar-stat">
-                <strong>{{ kpis.total_ytd }}</strong>
-                Incidents YTD
-            </div>
-            <div class="sidebar-stat">
-                <strong>{{ kpis.total_week }}</strong>
-                Last 7 days
-            </div>
-            <div class="sidebar-stat">
-                <strong>{{ kpis.top_district }}</strong>
-                Most active neighborhood
-            </div>
-        </div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Sources</div>
-            <nav class="sidebar-nav">
-                <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
-            </nav>
-        </div>
-    </aside>
-
-    <main>
-        <div class="page-header">
-            <h1>San Francisco Crime Overview</h1>
-            <p>Live data from the SFPD Incident Reports dataset — updated daily. 2018 to present.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>Key Metrics</h2>
-                <span>Unfounded and non-criminal incidents excluded</span>
-            </div>
-            <div class="kpi-grid">
-                <div class="kpi">
-                    <div class="kpi-label">Incidents This Year</div>
-                    <div class="kpi-value">{{ kpis.total_ytd }}</div>
-                    <div class="kpi-sub">Year to date</div>
-                </div>
-                <div class="kpi">
-                    <div class="kpi-label">Last 7 Days</div>
-                    <div class="kpi-value">{{ kpis.total_week }}</div>
-                    <div class="kpi-sub">Past week</div>
-                </div>
-                <div class="kpi">
-                    <div class="kpi-label">Top Crime Type</div>
-                    <div class="kpi-value sm">{{ kpis.top_category }}</div>
-                    <div class="kpi-sub">Most common — last 30 days</div>
-                </div>
-                <div class="kpi">
-                    <div class="kpi-label">Most Active Neighborhood</div>
-                    <div class="kpi-value sm">{{ kpis.top_district }}</div>
-                    <div class="kpi-sub">Highest volume — last 30 days</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h2>Incident Map</h2>
-                <span id="mapSubtitle">Top locations — last 30 days</span>
-                <div class="spacer"></div>
-                <select id="mapPeriod">
-                    <option value="7">Last 7 days</option>
-                    <option value="30" selected>Last 30 days</option>
-                    <option value="90">Last 90 days</option>
-                </select>
-            </div>
-            <div id="map"></div>
-            <div class="map-legend-bar" id="mapLegend"></div>
-            <div class="map-disclaimer">
-                ℹ Incident locations are mapped to the nearest reported intersection and do not represent exact crime locations. Location data is sourced directly from SFPD Incident Reports as provided to SF Open Data.
-            </div>
-        </div>
-    </main>
+{% block content %}
+<div class="page-header">
+    <h1>San Francisco Crime Overview</h1>
+    <p>Live data from the SFPD Incident Reports dataset — updated daily. 2018 to present.</p>
 </div>
 
-<footer>
-    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
-</footer>
+<div class="card">
+    <div class="card-header">
+        <h2>Key Metrics</h2>
+        <span>Unfounded and non-criminal incidents excluded</span>
+    </div>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Incidents This Year</div>
+            <div class="kpi-value">{{ kpis.total_ytd }}</div>
+            <div class="kpi-sub">Year to date</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Last 7 Days</div>
+            <div class="kpi-value">{{ kpis.total_week }}</div>
+            <div class="kpi-sub">Past week</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Top Crime Type</div>
+            <div class="kpi-value sm">{{ kpis.top_category }}</div>
+            <div class="kpi-sub">Most common — last 30 days</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Most Active Neighborhood</div>
+            <div class="kpi-value sm">{{ kpis.top_district }}</div>
+            <div class="kpi-sub">Highest volume — last 30 days</div>
+        </div>
+    </div>
+</div>
 
+<div class="card">
+    <div class="card-header">
+        <h2>Incident Map</h2>
+        <span id="mapSubtitle">Top locations — last 30 days</span>
+        <div class="spacer"></div>
+        <select id="mapPeriod">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend-bar" id="mapLegend"></div>
+    <div class="map-disclaimer">
+        ℹ Incident locations are mapped to the nearest reported intersection and do not represent exact crime locations. Location data is sourced directly from SFPD Incident Reports as provided to SF Open Data.
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ── Category → emoji mapping ──────────────────────────────────────────────────
 const CATEGORY_EMOJI = {
     'Motor Vehicle Theft':      '🚗',
     'Larceny Theft':            '🎒',
@@ -304,9 +87,7 @@ const CATEGORY_EMOJI = {
 };
 function emojiFor(cat) { return CATEGORY_EMOJI[cat] || '📍'; }
 
-// ── Map init ──────────────────────────────────────────────────────────────────
 const map = L.map('map').setView([37.7749, -122.4194], 13);
-
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap &copy; CartoDB',
     maxZoom: 18,
@@ -314,9 +95,8 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 
 const markerLayer = L.layerGroup().addTo(map);
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let allData        = [];     // full dataset from last fetch
-let activeCategories = new Set(); // categories currently toggled ON
+let allData        = [];
+let activeCategories = new Set();
 let currentDays    = 30;
 
 function makeIcon(category, count) {
@@ -332,39 +112,36 @@ function makeIcon(category, count) {
 }
 
 function makePopup(d) {
-    // Only show crimes that are currently active in the filter
     const shown = d.crimes.filter(c => activeCategories.has(c.category));
     const shownTotal = shown.reduce((s, c) => s + c.count, 0);
     const rows = shown.map(c =>
         `<tr>
             <td style="padding:2px 6px 2px 0;">${emojiFor(c.category)}</td>
-            <td style="padding:2px 0;">${c.category}</td>
-            <td style="padding:2px 0 2px 14px;text-align:right;color:#888;">${c.count}</td>
+            <td style="padding:2px 0;font-family:'Lora',serif;">${c.category}</td>
+            <td style="padding:2px 0 2px 14px;text-align:right;color:#888;font-family:'DM Mono',monospace;">${c.count}</td>
          </tr>`
     ).join('');
     return `
-        <div style="font-family:Arial,sans-serif;font-size:12px;min-width:200px;">
-            <div style="font-weight:bold;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #eee;">
+        <div style="font-family:'Lora',serif;font-size:13px;min-width:200px;">
+            <div style="font-family:'Playfair Display',serif;font-weight:bold;margin-bottom:5px;
+                        padding-bottom:5px;border-bottom:1px solid #ddd;">
                 ${d.intersection}
             </div>
-            <div style="color:#aaa;font-size:11px;margin-bottom:6px;">
+            <div style="color:#888;font-family:'Source Serif 4',serif;font-size:11px;margin-bottom:6px;">
                 ${shownTotal} incident${shownTotal !== 1 ? 's' : ''} — last ${currentDays} days
             </div>
             <table style="border-collapse:collapse;width:100%;">${rows}</table>
         </div>`;
 }
 
-// ── Filter + render markers ───────────────────────────────────────────────────
 function applyFilter() {
     markerLayer.clearLayers();
 
-    // A marker is visible if ANY of its crimes belong to an active category
     const visible = allData.filter(d =>
         d.crimes.some(c => activeCategories.has(c.category))
     );
 
     visible.forEach(d => {
-        // Pick the highest-count crime that is active as the displayed icon
         const topActive = d.crimes.find(c => activeCategories.has(c.category));
         const marker = L.marker([d.lat, d.lon], {
             icon:  makeIcon(topActive.category, d.total),
@@ -377,7 +154,6 @@ function applyFilter() {
     updateLegendCounts(visible);
 }
 
-// ── Legend ────────────────────────────────────────────────────────────────────
 const LEGEND_TOP_N = 10;
 let legendCats = [];
 
@@ -414,7 +190,6 @@ function buildLegend(data) {
         `<button class="legend-unselect" id="legendUnselect">Unselect all</button>` +
         `<span class="legend-showing" id="legendShowing"></span>`;
 
-    // Pill click toggle
     legendEl.querySelectorAll('.legend-item').forEach(el => {
         el.addEventListener('click', () => {
             const cat = el.dataset.cat;
@@ -431,7 +206,6 @@ function buildLegend(data) {
         });
     });
 
-    // Show more / show less toggle
     const toggleBtn = document.getElementById('legendToggle');
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
@@ -442,7 +216,6 @@ function buildLegend(data) {
         });
     }
 
-    // Show all
     document.getElementById('legendReset').addEventListener('click', () => {
         activeCategories = new Set(legendCats);
         legendEl.querySelectorAll('.legend-item').forEach(el => {
@@ -452,7 +225,6 @@ function buildLegend(data) {
         applyFilter();
     });
 
-    // Unselect all
     document.getElementById('legendUnselect').addEventListener('click', () => {
         activeCategories = new Set();
         legendEl.querySelectorAll('.legend-item').forEach(el => {
@@ -466,7 +238,6 @@ function buildLegend(data) {
 }
 
 function updateLegendCounts(visible) {
-    // Per-category count of currently visible intersections
     const counts = {};
     visible.forEach(d => {
         d.crimes.forEach(c => {
@@ -482,7 +253,6 @@ function updateLegendCounts(visible) {
     if (showing) showing.textContent = `${visible.length} location${visible.length !== 1 ? 's' : ''}`;
 }
 
-// ── Load ──────────────────────────────────────────────────────────────────────
 function loadMap(days) {
     currentDays = days;
     document.getElementById('mapSubtitle').textContent =
@@ -499,6 +269,4 @@ function loadMap(days) {
 document.getElementById('mapPeriod').addEventListener('change', e => loadMap(+e.target.value));
 loadMap(30);
 </script>
-
-</body>
-</html>
+{% endblock %}

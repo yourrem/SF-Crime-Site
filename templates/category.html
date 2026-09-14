@@ -1,250 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>By Category — SF Crime Tracker</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Georgia, serif; background: #f0f0f0; color: #111; }
+{% extends "base.html" %}
 
-        header {
-            background: #000; color: #fff;
-            padding: 14px 2rem;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .site-name { font-size: 1.3rem; font-weight: bold; }
-        .header-meta {
-            font-family: Arial, sans-serif; font-size: 0.72rem;
-            color: #888; letter-spacing: 1px; text-transform: uppercase;
-        }
+{% block title %}By Category — SF Crime Desk{% endblock %}
 
-        .layout {
-            display: flex; gap: 1.5rem;
-            max-width: 1280px; margin: 1.5rem auto;
-            padding: 0 1.5rem; align-items: flex-start;
-        }
-        aside { width: 190px; flex-shrink: 0; }
-        .sidebar-section { margin-bottom: 1.75rem; }
-        .sidebar-label {
-            font-family: Arial, sans-serif; font-size: 0.62rem; font-weight: bold;
-            letter-spacing: 2px; text-transform: uppercase; color: #999;
-            padding-bottom: 0.4rem; border-bottom: 1px solid #ccc; margin-bottom: 0.5rem;
-        }
-        .sidebar-nav a {
-            display: block; font-family: Arial, sans-serif; font-size: 0.82rem;
-            color: #444; text-decoration: none; padding: 5px 0 5px 10px;
-            border-left: 2px solid transparent;
-        }
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            color: #000; border-left-color: #000; font-weight: bold;
-        }
-
-        main { flex: 1; min-width: 0; }
-
-        .page-header {
-            border-bottom: 2px solid #000; padding-bottom: 0.75rem; margin-bottom: 1.25rem;
-        }
-        .page-header h1 { font-size: 1.7rem; }
-        .page-header p {
-            font-family: Arial, sans-serif; font-size: 0.8rem; color: #777; margin-top: 0.3rem;
-        }
-
-        /* ── Date range bar ────────────────────────────────── */
-        .range-bar {
-            display: flex; align-items: center; gap: 0.5rem;
-            background: #fff; border: 1px solid #ddd;
-            padding: 0.65rem 1rem; margin-bottom: 1.25rem;
-            font-family: Arial, sans-serif; flex-wrap: wrap;
-        }
-        .range-bar span {
-            font-size: 0.68rem; text-transform: uppercase;
-            letter-spacing: 1px; color: #aaa; margin-right: 0.25rem;
-        }
-        .range-btn {
-            font-family: Arial, sans-serif; font-size: 0.75rem;
-            background: none; border: 1px solid #ddd; color: #555;
-            padding: 4px 10px; cursor: pointer;
-        }
-        .range-btn:hover { border-color: #999; color: #111; }
-        .range-btn.active { background: #000; color: #fff; border-color: #000; }
-
-        .custom-wrap {
-            display: none; align-items: center; gap: 0.4rem;
-            margin-left: 0.25rem;
-        }
-        .custom-wrap.visible { display: flex; }
-        .custom-wrap input[type="date"] {
-            font-family: Arial, sans-serif; font-size: 0.75rem;
-            border: 1px solid #ddd; padding: 3px 6px; color: #333; outline: none;
-        }
-        .custom-wrap label { font-size: 0.72rem; color: #aaa; }
-        .custom-wrap button {
-            font-family: Arial, sans-serif; font-size: 0.72rem;
-            background: #000; color: #fff; border: none;
-            padding: 4px 10px; cursor: pointer;
-        }
-
-        /* ── Card ──────────────────────────────────────────── */
-        .card { background: #fff; border: 1px solid #ddd; margin-bottom: 1.25rem; }
-        .card-header {
-            padding: 0.8rem 1.2rem; border-bottom: 1px solid #eee;
-            display: flex; align-items: center; gap: 1rem;
-        }
-        .card-header h2 { font-size: 0.95rem; }
-        .card-header > span { font-family: Arial, sans-serif; font-size: 0.73rem; color: #aaa; }
-        .card-header .spacer { flex: 1; }
-
-        select {
-            font-family: Arial, sans-serif; font-size: 0.75rem; color: #333;
-            background: #fff; border: 1px solid #ccc; padding: 3px 8px;
-            cursor: pointer; outline: none;
-        }
-        select:hover { border-color: #999; }
-
-        /* ── Category table ─────────────────────────────────── */
-        table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 0.78rem; }
-        thead th {
-            text-align: left; padding: 0.5rem 1rem;
-            font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px;
-            color: #999; border-bottom: 1px solid #eee; background: #fafafa;
-        }
-        .cat-row {
-            border-bottom: 1px solid #f2f2f2; cursor: pointer;
-            transition: background 0.1s;
-        }
-        .cat-row:hover { background: #fafafa; }
-        .cat-row.expanded { background: #fafafa; }
-        td { padding: 0.6rem 1rem; vertical-align: middle; }
-        td.rank { font-family: monospace; font-size: 0.7rem; color: #ccc; width: 32px; text-align: right; }
-        td.name { font-weight: bold; }
-        td.bar-cell { width: 40%; }
-        .bar-bg { height: 6px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin-top: 3px; }
-        .bar-fill { height: 100%; border-radius: 2px; }
-        td.count { font-family: monospace; font-size: 0.75rem; text-align: right; white-space: nowrap; }
-        .chevron { font-size: 0.65rem; color: #bbb; margin-left: 6px; display: inline-block; transition: transform 0.2s; }
-        .cat-row.expanded .chevron { transform: rotate(90deg); }
-
-        /* ── Detail row ──────────────────────────────────────── */
-        .detail-row { display: none; }
-        .detail-row.open { display: table-row; }
-        .detail-row td { padding: 0; border-bottom: 2px solid #eee; }
-        .detail-inner { padding: 1.1rem 1.2rem; border-top: 1px solid #eee; }
-        .detail-header {
-            display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;
-        }
-        .detail-header h3 {
-            font-family: Arial, sans-serif; font-size: 0.8rem; font-weight: bold; color: #333;
-        }
-        .detail-header .note {
-            font-family: Arial, sans-serif; font-size: 0.7rem; color: #bbb;
-        }
-        .detail-header .spacer { flex: 1; }
-
-        footer {
-            background: #000; color: #555; text-align: center;
-            padding: 1rem 2rem; font-family: Arial, sans-serif;
-            font-size: 0.72rem; margin-top: 2rem;
-        }
-        footer a { color: #777; text-decoration: none; }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="site-name">SF Crime Tracker</div>
-    <div class="header-meta">San Francisco Public Safety Data</div>
-</header>
-
-<div class="layout">
-    <aside>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Navigation</div>
-            <nav class="sidebar-nav">
-                <a href="/">Overview</a>
-                <a href="/district">By Neighborhood</a>
-                <a href="/category" class="active">By Category</a>
-                <a href="/trends">Trends</a>
-                <a href="/forecast">Forecast</a>
-                <a href="/recent">Pipeline Log</a>
-                <a href="/clusters">Crime Clusters</a>
-            </nav>
-        </div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Sources</div>
-            <nav class="sidebar-nav">
-                <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports</a>
-                <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
-            </nav>
-        </div>
-    </aside>
-
-    <main>
-        <div class="page-header">
-            <h1>By Category</h1>
-            <p>Incident counts by category. Click any row to see when incidents occurred. Unfounded and non-criminal incidents excluded.</p>
-        </div>
-
-        <!-- Date range bar -->
-        <div class="range-bar">
-            <span>Period</span>
-            <button class="range-btn" data-days="1">Last 24h</button>
-            <button class="range-btn active" data-days="7">Last 7 days</button>
-            <button class="range-btn" data-days="30">Last 30 days</button>
-            <button class="range-btn" data-days="90">Last 90 days</button>
-            <button class="range-btn" id="ytdBtn">Year to Date</button>
-            <button class="range-btn" id="customBtn">Custom</button>
-            <div class="custom-wrap" id="customWrap">
-                <label>From</label>
-                <input type="date" id="startDate">
-                <label>to</label>
-                <input type="date" id="endDate">
-                <button id="applyCustom">Apply</button>
-            </div>
-        </div>
-
-        <!-- Top Categories table -->
-        <div class="card">
-            <div class="card-header">
-                <h2>Top Categories</h2>
-                <span id="rangeLabel">Last 7 days</span>
-                <div class="spacer"></div>
-                <span style="font-size:0.7rem; color:#ccc;">Click a row to expand</span>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:36px;">#</th>
-                        <th>Category</th>
-                        <th>Volume</th>
-                        <th style="text-align:right;">Incidents</th>
-                    </tr>
-                </thead>
-                <tbody id="catTable"></tbody>
-            </table>
-            <div style="padding: 0.65rem 1.2rem; border-top: 1px solid #f2f2f2; text-align: center;">
-                <button id="showAllBtn" style="
-                    background: none; border: none; font-family: Arial, sans-serif;
-                    font-size: 0.75rem; color: #888; cursor: pointer; text-decoration: underline;
-                    text-underline-offset: 2px;">
-                    Show all categories
-                </button>
-            </div>
-        </div>
-    </main>
+{% block content %}
+<div class="page-header">
+    <h1>By Category</h1>
+    <p>Incident counts by category. Click any row to see when incidents occurred. Unfounded and non-criminal incidents excluded.</p>
 </div>
 
-<footer>
-    Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
-</footer>
+<div class="range-bar">
+    <span>Period</span>
+    <button class="range-btn" data-days="1">Last 24h</button>
+    <button class="range-btn active" data-days="7">Last 7 days</button>
+    <button class="range-btn" data-days="30">Last 30 days</button>
+    <button class="range-btn" data-days="90">Last 90 days</button>
+    <button class="range-btn" id="ytdBtn">Year to Date</button>
+    <button class="range-btn" id="customBtn">Custom</button>
+    <div class="custom-wrap" id="customWrap">
+        <label>From</label>
+        <input type="date" id="startDate">
+        <label>to</label>
+        <input type="date" id="endDate">
+        <button id="applyCustom">Apply</button>
+    </div>
+</div>
 
+<div class="card">
+    <div class="card-header">
+        <h2>Top Categories</h2>
+        <span id="rangeLabel">Last 7 days</span>
+        <div class="spacer"></div>
+        <span class="hint-text">Click a row to expand</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:36px;">#</th>
+                <th>Category</th>
+                <th>Volume</th>
+                <th style="text-align:right;">Incidents</th>
+            </tr>
+        </thead>
+        <tbody id="catTable"></tbody>
+    </table>
+    <div class="show-all-wrap">
+        <button id="showAllBtn" class="show-all-btn">Show all categories</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// ── Palette ───────────────────────────────────────────────────────────────────
 const PALETTE = [
-    '#5B8DB8','#5A9990','#6A9E78','#8E9E5A','#C4952E',
-    '#C4714E','#B07A8A','#8E7AAB','#7A82B5','#9B7B4A',
+    '#2D5FA6', '#8B1A1A', '#1A6B3C', '#7B4F1A', '#4A2D8B',
+    '#1A5E6B', '#8B6B1A', '#6B1A4A', '#3D7A4A', '#4A4A8B',
 ];
 function colorFor(name) {
     let h = 0;
@@ -254,28 +64,9 @@ function colorFor(name) {
 
 const fmt = n => n.toLocaleString();
 
-const tooltipDefaults = {
-    backgroundColor: '#fff', borderColor: '#ddd', borderWidth: 1,
-    titleColor: '#111', bodyColor: '#555',
-    titleFont: { family: 'Arial', size: 11 },
-    bodyFont:  { family: 'Arial', size: 11 },
-};
-const axisDefaults = {
-    x: {
-        grid: { display: false },
-        ticks: { font: { family: 'Arial', size: 10 }, color: '#aaa', maxRotation: 0 },
-        border: { color: '#eee' },
-    },
-    y: {
-        grid: { color: '#f2f2f2' },
-        ticks: { font: { family: 'Arial', size: 10 }, color: '#aaa' },
-        border: { color: '#eee', dash: [3, 3] },
-    }
-};
-
-// ── Date range state ──────────────────────────────────────────────────────────
+// ── Date range state ──────────────────────────────────────────────
 let DR = { start: '', end: '' };
-let maxDate = new Date();  // capped to latest date in DB once fetched
+let maxDate = new Date();
 
 function toISO(d) { return d.toISOString().slice(0, 10); }
 
@@ -322,7 +113,7 @@ document.getElementById('applyCustom').addEventListener('click', () => {
     reloadAll();
 });
 
-// ── Category table + expandable time charts ───────────────────────────────────
+// ── Category table + expandable time charts ───────────────────────
 const activeCharts = {};
 let expandedSlug = null;
 let showAll = false;
@@ -348,7 +139,6 @@ function loadCategories() {
         .then(data => {
             const max = data[0]?.total || 1;
             const tbody = document.getElementById('catTable');
-
             expandedSlug = null;
 
             tbody.innerHTML = data.map((d, i) => {
@@ -371,7 +161,7 @@ function loadCategories() {
                 </tr>
                 <tr class="detail-row" id="detail-${sg}">
                     <td colspan="4">
-                        <div class="detail-inner">
+                        <div class="detail-body">
                             <div class="detail-header">
                                 <h3>Time Distribution</h3>
                                 <span class="note">When incidents occurred (falls back to report time if unknown)</span>
@@ -458,17 +248,16 @@ function loadTimeChart(sg, cat, granularity) {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            ...tooltipDefaults,
+                            ...window.NP_TOOLTIP,
                             callbacks: { label: ctx => `  ${fmt(ctx.parsed.y)} incidents` }
                         }
                     },
-                    scales: axisDefaults
+                    scales: window.NP_AXIS
                 }
             });
         });
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 function reloadAll() {
     if (expandedSlug) {
         destroyChart(expandedSlug);
@@ -484,6 +273,4 @@ fetch('/api/latest-date')
         setRange(7, 'Last 7 days');
     });
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SF Crime Desk{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<header class="masthead">
+    <div class="masthead-inner">
+        <div class="masthead-top-rule"></div>
+        <div class="masthead-meta-line">
+            <span class="masthead-date">{{ current_date }}</span>
+            <span class="masthead-edition">San Francisco, California</span>
+            <span class="masthead-tagline">Public Safety Data</span>
+        </div>
+        <div class="masthead-nameplate">
+            <div class="masthead-name">SF Crime Desk</div>
+            <p class="masthead-sub">San Francisco Police Department Incident Reports — 2018 to Present</p>
+        </div>
+        <nav class="masthead-nav">
+            <a href="/" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
+            <a href="/district" class="{{ 'active' if active_page == 'district' else '' }}">By Neighborhood</a>
+            <a href="/category" class="{{ 'active' if active_page == 'category' else '' }}">By Category</a>
+            <a href="/trends" class="{{ 'active' if active_page == 'trends' else '' }}">Trends</a>
+            <a href="/forecast" class="{{ 'active' if active_page == 'forecast' else '' }}">Forecast</a>
+            <a href="/recent" class="{{ 'active' if active_page == 'recent' else '' }}">Pipeline Log</a>
+            <a href="/clusters" class="{{ 'active' if active_page == 'clusters' else '' }}">Crime Clusters</a>
+        </nav>
+        <div class="masthead-bottom-rule"></div>
+    </div>
+</header>
+
+<div class="layout">
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<footer>
+    <div class="footer-sources">
+        <span class="footer-sources-label">Sources</span>
+        <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data Portal</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports (2018–Present)</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
+    </div>
+    <div class="footer-credit">
+        Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+    </div>
+</footer>
+
+<script>
+window.NP_TOOLTIP = {
+    backgroundColor: '#fff',
+    borderColor: '#111',
+    borderWidth: 1,
+    cornerRadius: 0,
+    titleColor: '#111',
+    bodyColor: '#444',
+    titleFont: { family: "'DM Mono', monospace", size: 11 },
+    bodyFont:  { family: "'Source Serif 4', serif", size: 11 },
+    padding: 10,
+};
+window.NP_AXIS = {
+    x: {
+        grid: { display: false },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888', maxRotation: 0 },
+        border: { color: '#111' },
+    },
+    y: {
+        grid: { color: '#f0ece5' },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888' },
+        border: { color: '#111', dash: [3, 3] },
+    }
+};
+</script>
+{% block page_scripts %}{% endblock %}
+
+</body>
+</html>

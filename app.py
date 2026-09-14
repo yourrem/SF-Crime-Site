@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from datetime import datetime
 from sklearn.cluster import KMeans
 from flask import Flask, render_template, jsonify, request
 from flask_caching import Cache
@@ -10,6 +11,11 @@ load_dotenv()
 
 app = Flask(__name__)
 engine = create_engine(os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL"))
+
+@app.context_processor
+def inject_date():
+    return {'current_date': datetime.now().strftime('%A, %B %-d, %Y')}
+
 
 if os.getenv("REDIS_URL"):
     cache = Cache(app, config={
@@ -64,7 +70,7 @@ def index():
         "top_category": top_category[0] if top_category else "N/A",
         "top_district": top_district[0] if top_district else "N/A",
     }
-    return render_template("index.html", kpis=kpis)
+    return render_template("index.html", kpis=kpis, active_page="overview")
 
 
 @app.route("/recent")
@@ -98,12 +104,12 @@ def recent():
             LIMIT 10
         """)).fetchall()
 
-    return render_template("recent.html", incidents=incidents, calls=calls)
+    return render_template("recent.html", incidents=incidents, calls=calls, active_page="recent")
 
 
 @app.route("/trends")
 def trends():
-    return render_template("trends.html")
+    return render_template("trends.html", active_page="trends")
 
 
 @app.route("/api/latest-date")
@@ -137,7 +143,7 @@ def api_trends():
 
 @app.route("/forecast")
 def forecast():
-    return render_template("forecast.html")
+    return render_template("forecast.html", active_page="forecast")
 
 
 @app.route("/api/forecast")
@@ -180,17 +186,17 @@ def api_forecast():
 
 @app.route("/district")
 def district():
-    return render_template("district.html")
+    return render_template("district.html", active_page="district")
 
 
 @app.route("/category")
 def category():
-    return render_template("category.html")
+    return render_template("category.html", active_page="category")
 
 
 @app.route("/clusters")
 def clusters():
-    return render_template("clusters.html")
+    return render_template("clusters.html", active_page="clusters")
 
 
 @app.route("/api/crime-clusters")
