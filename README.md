@@ -1,5 +1,7 @@
 # SF Crime Tracker
 
+**[▶ Live demo](https://yourrem.github.io/SF-Crime-Site/)** — a fully interactive static snapshot of the site (charts, maps, and filters all work; see [Static demo](#static-demo) below).
+
 An end-to-end data engineering + machine learning system built on 8+ years of SFPD incident data from SF Open Data. Pulls data from a live API, loads it into PostgreSQL, transforms it with dbt, forecasts with Ridge regression, and displays everything on a Flask web app — fully automated with Apache Airflow.
 
 ## Architecture
@@ -154,6 +156,15 @@ python3 app.py
 ln -s $(pwd)/dags/sfcrime_pipeline.py ~/airflow/dags/sfcrime_pipeline.py
 airflow standalone
 # UI at http://localhost:8080 — unpause both sfcrime DAGs
+```
+
+## Static Demo
+
+The full stack (Postgres, Redis, Airflow) can't run on GitHub Pages, so `docs/` holds a **static snapshot** built by `scripts/build_static.py`. The script captures every rendered page and every UI-reachable API response (~1,800 JSON files) through the Flask test client, then injects a small fetch shim that redirects `/api/...` calls to the pre-generated JSON — so every preset control (date ranges, map periods, cluster settings, drill-down charts) works exactly as it did against the live database on the snapshot date. Free-form custom date ranges are the one feature that requires the live backend.
+
+```bash
+# Rebuild the snapshot from current DB state, then commit docs/
+python3 scripts/build_static.py
 ```
 
 ## Data Sources

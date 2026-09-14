@@ -1,0 +1,852 @@
+/* ── 1. Reset & Base ──────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Lora', Georgia, serif;
+    background: #faf9f6;
+    color: #111;
+    line-height: 1.5;
+}
+
+/* ── 2. Masthead ──────────────────────────────────────────────── */
+.masthead {
+    background: #fff;
+    border-bottom: 3px solid #111;
+}
+
+.masthead-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.masthead-top-rule {
+    border-top: 1px solid #111;
+    margin-top: 0.75rem;
+}
+
+.masthead-meta-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.65rem;
+    font-weight: 300;
+    color: #555;
+    border-bottom: 1px solid #111;
+}
+
+.masthead-nameplate {
+    text-align: center;
+    padding: 0.85rem 0 0.65rem;
+}
+
+.masthead-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #111;
+    line-height: 1;
+}
+
+.masthead-sub {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #666;
+    margin-top: 0.3rem;
+    letter-spacing: 0.3px;
+}
+
+.masthead-bottom-rule {
+    border-top: 3px double #111;
+}
+
+/* ── 3. Masthead Nav ──────────────────────────────────────────── */
+.masthead-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.7rem 0 0.9rem;
+}
+
+.masthead-nav a {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.7rem;
+    font-weight: 400;
+    font-variant: small-caps;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #555;
+    text-decoration: none;
+    padding: 3px 16px;
+    border-right: 1px solid #ccc;
+    transition: color 0.12s;
+    white-space: nowrap;
+}
+
+.masthead-nav a:last-child { border-right: none; }
+
+.masthead-nav a:hover { color: #111; }
+
+.masthead-nav a.active {
+    color: #111;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ── 4. Layout Shell ──────────────────────────────────────────── */
+.layout {
+    max-width: 1280px;
+    margin: 1.75rem auto;
+    padding: 0 2rem;
+}
+
+/* ── 5. Main ──────────────────────────────────────────────────── */
+main { width: 100%; }
+
+/* ── 6. Page Header ───────────────────────────────────────────── */
+.page-header {
+    border-bottom: 2px solid #111;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.page-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.page-header p {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.8rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #666;
+    margin-top: 0.3rem;
+}
+
+/* ── 7. Card Component ────────────────────────────────────────── */
+.card {
+    background: #fff;
+    border: 1.5px solid #111;
+    margin-bottom: 1.5rem;
+    transition: box-shadow 0.15s ease;
+}
+
+.card:hover {
+    box-shadow: 3px 3px 0 #111;
+}
+
+.card-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.card-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.card-header > span {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #888;
+}
+
+.card-header .spacer { flex: 1; }
+
+.card-body { padding: 1.25rem; }
+
+.hint-text {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.7rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #bbb;
+}
+
+/* ── 8. KPI Grid (Overview) ───────────────────────────────────── */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.kpi {
+    padding: 1rem 1.25rem;
+    border-right: 1px solid #ddd;
+    cursor: default;
+    transition: background 0.15s ease;
+}
+
+.kpi:last-child { border-right: none; }
+
+.kpi:hover {
+    background: #111;
+}
+
+.kpi:hover .kpi-label,
+.kpi:hover .kpi-value,
+.kpi:hover .kpi-sub {
+    color: #f5f2ec;
+}
+
+.kpi-label {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-bottom: 0.35rem;
+    transition: color 0.15s ease;
+}
+
+.kpi-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.9rem;
+    font-weight: 500;
+    color: #111;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.kpi-value.sm {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding-top: 0.45rem;
+}
+
+.kpi-sub {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    font-weight: 300;
+    color: #bbb;
+    margin-top: 0.25rem;
+    transition: color 0.15s ease;
+}
+
+/* ── 9. KPI Strip (Forecast) ──────────────────────────────────── */
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-strip .kpi {
+    background: #fff;
+    border: 1.5px solid #111;
+    border-right: 1.5px solid #111;
+    padding: 0.9rem 1.1rem;
+}
+
+/* ── 10. Data Tables ──────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Lora', serif;
+    font-size: 0.82rem;
+}
+
+thead th {
+    text-align: left;
+    padding: 0.55rem 1rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.58rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    border-bottom: 2px solid #111;
+    background: #fafaf8;
+}
+
+tbody tr { border-bottom: 1px solid #eee; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #fafaf8; }
+
+td {
+    padding: 0.6rem 1rem;
+    vertical-align: middle;
+    color: #333;
+}
+
+/* Accordion table rows */
+.nb-row,
+.cat-row {
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.nb-row:hover,
+.cat-row:hover {
+    background: #111;
+}
+
+.nb-row:hover td,
+.cat-row:hover td {
+    color: #f5f2ec;
+}
+
+.nb-row:hover .chevron,
+.cat-row:hover .chevron { color: #f5f2ec; }
+
+.nb-row:hover .bar-bg,
+.cat-row:hover .bar-bg { background: #333; }
+
+.nb-row.expanded,
+.cat-row.expanded { background: #fafaf8; }
+
+td.rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: #ccc;
+    width: 32px;
+    text-align: right;
+}
+
+td.name { font-weight: 600; }
+td.bar-cell { width: 40%; }
+
+.bar-bg {
+    height: 6px;
+    background: #ede9e0;
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 3px;
+    transition: background 0.12s;
+}
+
+.bar-fill { height: 100%; border-radius: 1px; }
+
+td.count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.chevron {
+    font-size: 0.65rem;
+    color: #bbb;
+    margin-left: 6px;
+    display: inline-block;
+    transition: transform 0.2s, color 0.15s;
+}
+
+.nb-row.expanded .chevron,
+.cat-row.expanded .chevron { transform: rotate(90deg); }
+
+/* Pipeline log table cells */
+td.datetime {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #888;
+    white-space: nowrap;
+}
+
+td.category {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    color: #111;
+}
+
+td.description { color: #666; font-size: 0.78rem; }
+
+td.resolution {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    color: #888;
+}
+
+/* ── 11. Range Bar / Controls Bar ─────────────────────────────── */
+.range-bar,
+.controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border: 1.5px solid #111;
+    padding: 0.65rem 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.range-bar > span {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-right: 0.25rem;
+}
+
+.range-btn,
+.ctrl-btn {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.75rem;
+    background: none;
+    border: 1px solid #bbb;
+    color: #555;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    white-space: nowrap;
+}
+
+.range-btn:hover,
+.ctrl-btn:hover { border-color: #111; color: #111; }
+
+.range-btn.active,
+.ctrl-btn.active { background: #111; color: #f5f2ec; border-color: #111; }
+
+.ctrl-label {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.6rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    white-space: nowrap;
+}
+
+.ctrl-sep {
+    width: 1px;
+    height: 20px;
+    background: #ddd;
+    margin: 0 0.15rem;
+    flex-shrink: 0;
+}
+
+.custom-wrap { display: none; align-items: center; gap: 0.4rem; margin-left: 0.25rem; }
+.custom-wrap.visible { display: flex; }
+
+.custom-wrap input[type="date"] {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    border: 1px solid #bbb;
+    padding: 3px 6px;
+    color: #333;
+    outline: none;
+    background: #fff;
+}
+
+.custom-wrap label {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    color: #888;
+}
+
+.custom-wrap button {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    background: #111;
+    color: #f5f2ec;
+    border: none;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+/* ── 12. Select ───────────────────────────────────────────────── */
+select {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.75rem;
+    color: #333;
+    background: #fff;
+    border: 1px solid #bbb;
+    padding: 3px 8px;
+    cursor: pointer;
+    outline: none;
+}
+
+select:hover { border-color: #111; }
+
+/* ── 13. Detail / Accordion Rows ─────────────────────────────── */
+.detail-row { display: none; }
+.detail-row.open { display: table-row; }
+.detail-row td { padding: 0; border-bottom: 2px solid #111; }
+
+/* District: 2-column grid */
+.detail-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #ddd;
+}
+
+.detail-panel { padding: 1.1rem 1.25rem; }
+.detail-panel + .detail-panel { border-left: 1px solid #ddd; }
+
+.detail-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+}
+
+.detail-panel-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.detail-panel-header .spacer { flex: 1; }
+.detail-panel-header select { font-size: 0.72rem; padding: 2px 6px; }
+
+/* Category: single-column padded */
+.detail-body {
+    padding: 1.1rem 1.25rem;
+    border-top: 1px solid #ddd;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.detail-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.detail-header .note {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.7rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #bbb;
+}
+
+.detail-header .spacer { flex: 1; }
+
+/* ── 14. Map Elements ─────────────────────────────────────────── */
+#map { width: 100%; }
+
+.crime-marker {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.92);
+    border: 1.5px solid rgba(0,0,0,0.18);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.crime-marker:hover { transform: scale(1.15); }
+
+.crime-marker.multi {
+    border-color: rgba(0,0,0,0.35);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.35);
+}
+
+.map-legend-bar {
+    padding: 0.65rem 1.25rem;
+    border-top: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    font-weight: 300;
+    color: #888;
+    flex-wrap: wrap;
+    min-height: 38px;
+}
+
+.legend-bar-label {
+    font-size: 0.6rem;
+    font-variant: small-caps;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-right: 0.3rem;
+    white-space: nowrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+    color: #555;
+    background: #fff;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    transition: opacity 0.15s, border-color 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.legend-item:hover { border-color: #111; }
+.legend-item.inactive { opacity: 0.28; }
+
+.legend-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: #888;
+    margin-left: 2px;
+}
+
+.legend-reset,
+.legend-unselect,
+.legend-toggle {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    font-style: italic;
+    color: #888;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+    background: none;
+    border: none;
+}
+
+.legend-reset { margin-left: auto; }
+.legend-toggle { text-decoration: none; font-style: normal; }
+
+.legend-reset:hover,
+.legend-unselect:hover,
+.legend-toggle:hover { color: #111; }
+
+.legend-showing {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #888;
+    white-space: nowrap;
+}
+
+.map-disclaimer {
+    padding: 0.65rem 1.25rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #888;
+    border-top: 1px solid #ddd;
+    line-height: 1.6;
+}
+
+/* Clusters map legend */
+.legend-swatch {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.68rem;
+    color: #666;
+    white-space: nowrap;
+}
+
+.swatch-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* ── 15. Chart Legends ────────────────────────────────────────── */
+.legend {
+    display: flex;
+    gap: 1.5rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    color: #666;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.legend-item-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-line {
+    width: 22px;
+    height: 3px;
+    border-radius: 1px;
+}
+
+.legend-line.dashed {
+    background: repeating-linear-gradient(
+        to right, #8B1A1A 0, #8B1A1A 4px, transparent 4px, transparent 8px
+    );
+}
+
+.legend-band {
+    width: 22px; height: 10px;
+    border-radius: 1px;
+    background: rgba(139,26,26,0.15);
+    border: 1px solid rgba(139,26,26,0.3);
+}
+
+.swatch-bar { background: #c8c0b0; }
+.swatch-line { background: #111; }
+
+#trendLegend {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.72rem;
+    font-weight: 300;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+/* ── 16. Header Stat (Trends cards) ──────────────────────────── */
+.header-stat { text-align: right; line-height: 1.2; }
+
+.header-stat .stat-num {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #111;
+    letter-spacing: -0.5px;
+}
+
+.header-stat .stat-label {
+    display: block;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.6rem;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #bbb;
+}
+
+/* ── 17. Model Note (Forecast) ────────────────────────────────── */
+.model-note {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.7rem;
+    font-weight: 300;
+    font-style: italic;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding: 0.75rem 1.25rem;
+    line-height: 1.7;
+}
+
+.model-note strong {
+    font-style: normal;
+    font-weight: 400;
+    color: #555;
+}
+
+/* ── 18. Show-all Button ──────────────────────────────────────── */
+.show-all-wrap {
+    padding: 0.65rem 1.25rem;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.show-all-btn {
+    background: none;
+    border: none;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #888;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.show-all-btn:hover { color: #111; }
+
+/* ── 19. Badges (Pipeline Log) ───────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 1px 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    border: 1.5px solid #bbb;
+    color: #666;
+    letter-spacing: 0.5px;
+}
+
+.badge.priority-1 {
+    border-color: #111;
+    background: #111;
+    color: #f5f2ec;
+    font-weight: 500;
+}
+
+.badge.priority-2 { border-color: #555; color: #555; }
+
+/* ── 20. Footer ───────────────────────────────────────────────── */
+footer {
+    background: #111;
+    color: #888;
+    text-align: center;
+    padding: 1.5rem 2rem;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.7rem;
+    font-weight: 300;
+    margin-top: 3rem;
+    border-top: 3px double #555;
+}
+
+.footer-sources {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.footer-sources-label {
+    font-family: 'Source Serif 4', serif;
+    font-variant: small-caps;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #666;
+    font-size: 0.6rem;
+    padding-right: 14px;
+    border-right: 1px solid #333;
+    margin-right: 0;
+}
+
+.footer-sources a {
+    color: #aaa;
+    text-decoration: none;
+    padding: 0 14px;
+    border-right: 1px solid #333;
+    font-size: 0.7rem;
+}
+
+.footer-sources a:last-child { border-right: none; }
+.footer-sources a:hover { color: #f5f2ec; }
+
+.footer-credit { color: #555; font-size: 0.68rem; }
+.footer-credit a { color: #777; text-decoration: none; }
+.footer-credit a:hover { color: #aaa; }

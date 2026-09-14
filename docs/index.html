@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Crime Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>#map { height: 500px; }</style>
+
+<style>
+.static-banner {
+    background: #111;
+    color: #f5f2ec;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    text-align: center;
+    padding: 0.45rem 1rem;
+    letter-spacing: 0.4px;
+}
+.static-banner a { color: #c4952e; }
+#customBtn, #customWrap { display: none !important; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+    var MIN_YEAR = 2018, MAX_YEAR = 2026;
+    var origFetch = window.fetch.bind(window);
+    function sanitize(s) {
+        var out = '', enc = new TextEncoder();
+        for (var ch of s) {
+            if (/^[A-Za-z0-9-]$/.test(ch)) { out += ch; continue; }
+            var bytes = enc.encode(ch);
+            for (var i = 0; i < bytes.length; i++) {
+                out += '_' + bytes[i].toString(16).toUpperCase().padStart(2, '0');
+            }
+        }
+        return out;
+    }
+    window.fetch = function (input, init) {
+        var raw = (typeof input === 'string') ? input : (input && input.url) || '';
+        if (raw.indexOf('/api/') !== 0) return origFetch(input, init);
+        var u = new URL(raw, window.location.origin);
+        var endpoint = u.pathname.slice(5).replace(/\//g, '_');
+        var pairs = Array.from(u.searchParams.entries());
+        if (endpoint === 'monthly') {
+            pairs = pairs.map(function (p) {
+                if (p[0] !== 'year') return p;
+                return ['year', String(Math.min(Math.max(+p[1], MIN_YEAR), MAX_YEAR))];
+            });
+        }
+        pairs.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+        var name = endpoint + (pairs.length
+            ? '__' + pairs.map(function (p) { return sanitize(p[0]) + '-' + sanitize(p[1]); }).join('__')
+            : '');
+        return origFetch('api/' + name + '.json').then(function (r) {
+            if (r.ok) return r;
+            var body = (endpoint === 'monthly') ? '{"months":[],"years":[]}' : '[]';
+            return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+        });
+    };
+})();
+</script>
+<div class="static-banner">Static snapshot &mdash; data through September 13, 2026. Preset views are fully interactive; the live pipeline (Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) runs from the <a href="https://github.com/yourrem/SF-Crime-Site">source on GitHub</a>.</div>
+
+<header class="masthead">
+    <div class="masthead-inner">
+        <div class="masthead-top-rule"></div>
+        <div class="masthead-meta-line">
+            <span class="masthead-date">Sunday, September 13, 2026</span>
+            <span class="masthead-edition">San Francisco, California</span>
+            <span class="masthead-tagline">Public Safety Data</span>
+        </div>
+        <div class="masthead-nameplate">
+            <div class="masthead-name">SF Crime Desk</div>
+            <p class="masthead-sub">San Francisco Police Department Incident Reports — 2018 to Present</p>
+        </div>
+        <nav class="masthead-nav">
+            <a href="index.html" class="active">Overview</a>
+            <a href="district.html" class="">By Neighborhood</a>
+            <a href="category.html" class="">By Category</a>
+            <a href="trends.html" class="">Trends</a>
+            <a href="forecast.html" class="">Forecast</a>
+            <a href="recent.html" class="">Pipeline Log</a>
+            <a href="clusters.html" class="">Crime Clusters</a>
+        </nav>
+        <div class="masthead-bottom-rule"></div>
+    </div>
+</header>
+
+<div class="layout">
+    <main>
+        
+<div class="page-header">
+    <h1>San Francisco Crime Overview</h1>
+    <p>Live data from the SFPD Incident Reports dataset — updated daily. 2018 to present.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Key Metrics</h2>
+        <span>Unfounded and non-criminal incidents excluded</span>
+    </div>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Incidents This Year</div>
+            <div class="kpi-value">57,738</div>
+            <div class="kpi-sub">Year to date</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Last 7 Days</div>
+            <div class="kpi-value">1,169</div>
+            <div class="kpi-sub">Past week</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Top Crime Type</div>
+            <div class="kpi-value sm">Larceny Theft</div>
+            <div class="kpi-sub">Most common — last 30 days</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Most Active Neighborhood</div>
+            <div class="kpi-value sm">Mission</div>
+            <div class="kpi-sub">Highest volume — last 30 days</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Incident Map</h2>
+        <span id="mapSubtitle">Top locations — last 30 days</span>
+        <div class="spacer"></div>
+        <select id="mapPeriod">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend-bar" id="mapLegend"></div>
+    <div class="map-disclaimer">
+        ℹ Incident locations are mapped to the nearest reported intersection and do not represent exact crime locations. Location data is sourced directly from SFPD Incident Reports as provided to SF Open Data.
+    </div>
+</div>
+
+    </main>
+</div>
+
+<footer>
+    <div class="footer-sources">
+        <span class="footer-sources-label">Sources</span>
+        <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data Portal</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports (2018–Present)</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
+    </div>
+    <div class="footer-credit">
+        Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+    </div>
+</footer>
+
+<script>
+window.NP_TOOLTIP = {
+    backgroundColor: '#fff',
+    borderColor: '#111',
+    borderWidth: 1,
+    cornerRadius: 0,
+    titleColor: '#111',
+    bodyColor: '#444',
+    titleFont: { family: "'DM Mono', monospace", size: 11 },
+    bodyFont:  { family: "'Source Serif 4', serif", size: 11 },
+    padding: 10,
+};
+window.NP_AXIS = {
+    x: {
+        grid: { display: false },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888', maxRotation: 0 },
+        border: { color: '#111' },
+    },
+    y: {
+        grid: { color: '#f0ece5' },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888' },
+        border: { color: '#111', dash: [3, 3] },
+    }
+};
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CATEGORY_EMOJI = {
+    'Motor Vehicle Theft':      '🚗',
+    'Larceny Theft':            '🎒',
+    'Drug Offense':             '💊',
+    'Assault':                  '👊',
+    'Robbery':                  '💰',
+    'Burglary':                 '🏠',
+    'Vandalism':                '🔨',
+    'Weapons Carrying Etc':     '🔫',
+    'Suspicious Occ':           '👀',
+    'Warrant':                  '⚖️',
+    'Traffic Violation Arrest': '🚦',
+    'Sexual Assault':           '⚠️',
+    'Fraud':                    '💳',
+    'Arson':                    '🔥',
+    'Missing Person':           '🔍',
+    'Vehicle Impounded':        '🅿️',
+    'Recovered Vehicle':        '🔑',
+    'Disorderly Conduct':       '📢',
+    'Other Miscellaneous':      '📋',
+};
+function emojiFor(cat) { return CATEGORY_EMOJI[cat] || '📍'; }
+
+const map = L.map('map').setView([37.7749, -122.4194], 13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CartoDB',
+    maxZoom: 18,
+}).addTo(map);
+
+const markerLayer = L.layerGroup().addTo(map);
+
+let allData        = [];
+let activeCategories = new Set();
+let currentDays    = 30;
+
+function makeIcon(category, count) {
+    const emoji = emojiFor(category);
+    const multi = count > 1 ? ' multi' : '';
+    return L.divIcon({
+        html: `<div class="crime-marker${multi}">${emoji}</div>`,
+        className: '',
+        iconSize:   [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor:[0, -16],
+    });
+}
+
+function makePopup(d) {
+    const shown = d.crimes.filter(c => activeCategories.has(c.category));
+    const shownTotal = shown.reduce((s, c) => s + c.count, 0);
+    const rows = shown.map(c =>
+        `<tr>
+            <td style="padding:2px 6px 2px 0;">${emojiFor(c.category)}</td>
+            <td style="padding:2px 0;font-family:'Lora',serif;">${c.category}</td>
+            <td style="padding:2px 0 2px 14px;text-align:right;color:#888;font-family:'DM Mono',monospace;">${c.count}</td>
+         </tr>`
+    ).join('');
+    return `
+        <div style="font-family:'Lora',serif;font-size:13px;min-width:200px;">
+            <div style="font-family:'Playfair Display',serif;font-weight:bold;margin-bottom:5px;
+                        padding-bottom:5px;border-bottom:1px solid #ddd;">
+                ${d.intersection}
+            </div>
+            <div style="color:#888;font-family:'Source Serif 4',serif;font-size:11px;margin-bottom:6px;">
+                ${shownTotal} incident${shownTotal !== 1 ? 's' : ''} — last ${currentDays} days
+            </div>
+            <table style="border-collapse:collapse;width:100%;">${rows}</table>
+        </div>`;
+}
+
+function applyFilter() {
+    markerLayer.clearLayers();
+
+    const visible = allData.filter(d =>
+        d.crimes.some(c => activeCategories.has(c.category))
+    );
+
+    visible.forEach(d => {
+        const topActive = d.crimes.find(c => activeCategories.has(c.category));
+        const marker = L.marker([d.lat, d.lon], {
+            icon:  makeIcon(topActive.category, d.total),
+            title: d.intersection,
+        });
+        marker.bindPopup(makePopup(d), { maxWidth: 280 });
+        markerLayer.addLayer(marker);
+    });
+
+    updateLegendCounts(visible);
+}
+
+const LEGEND_TOP_N = 10;
+let legendCats = [];
+
+function buildLegend(data) {
+    const catCounts = {};
+    data.forEach(d => {
+        d.crimes.forEach(c => {
+            catCounts[c.category] = (catCounts[c.category] || 0) + 1;
+        });
+    });
+
+    legendCats = Object.entries(catCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat]) => cat);
+
+    activeCategories = new Set(legendCats);
+
+    const top  = legendCats.slice(0, LEGEND_TOP_N);
+    const rest = legendCats.slice(LEGEND_TOP_N);
+
+    function pillHTML(cat) {
+        return `<div class="legend-item active" data-cat="${cat}">${emojiFor(cat)} ${cat}<span class="legend-count" id="lc-${CSS.escape(cat)}"></span></div>`;
+    }
+
+    const legendEl = document.getElementById('mapLegend');
+    legendEl.innerHTML =
+        `<span class="legend-bar-label">Filter</span>` +
+        top.map(pillHTML).join('') +
+        (rest.length
+            ? `<div class="legend-overflow" id="legendOverflow" style="display:none">${rest.map(pillHTML).join('')}</div>` +
+              `<button class="legend-toggle" id="legendToggle">▼ ${rest.length} more</button>`
+            : '') +
+        `<button class="legend-reset" id="legendReset">Show all</button>` +
+        `<button class="legend-unselect" id="legendUnselect">Unselect all</button>` +
+        `<span class="legend-showing" id="legendShowing"></span>`;
+
+    legendEl.querySelectorAll('.legend-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const cat = el.dataset.cat;
+            if (activeCategories.has(cat)) {
+                activeCategories.delete(cat);
+                el.classList.add('inactive');
+                el.classList.remove('active');
+            } else {
+                activeCategories.add(cat);
+                el.classList.remove('inactive');
+                el.classList.add('active');
+            }
+            applyFilter();
+        });
+    });
+
+    const toggleBtn = document.getElementById('legendToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const overflow = document.getElementById('legendOverflow');
+            const expanded = overflow.style.display !== 'none';
+            overflow.style.display = expanded ? 'none' : 'contents';
+            toggleBtn.textContent = expanded ? `▼ ${rest.length} more` : '▲ show less';
+        });
+    }
+
+    document.getElementById('legendReset').addEventListener('click', () => {
+        activeCategories = new Set(legendCats);
+        legendEl.querySelectorAll('.legend-item').forEach(el => {
+            el.classList.remove('inactive');
+            el.classList.add('active');
+        });
+        applyFilter();
+    });
+
+    document.getElementById('legendUnselect').addEventListener('click', () => {
+        activeCategories = new Set();
+        legendEl.querySelectorAll('.legend-item').forEach(el => {
+            el.classList.add('inactive');
+            el.classList.remove('active');
+        });
+        applyFilter();
+    });
+
+    applyFilter();
+}
+
+function updateLegendCounts(visible) {
+    const counts = {};
+    visible.forEach(d => {
+        d.crimes.forEach(c => {
+            if (activeCategories.has(c.category))
+                counts[c.category] = (counts[c.category] || 0) + 1;
+        });
+    });
+    Object.entries(counts).forEach(([cat, n]) => {
+        const el = document.getElementById(`lc-${CSS.escape(cat)}`);
+        if (el) el.textContent = n;
+    });
+    const showing = document.getElementById('legendShowing');
+    if (showing) showing.textContent = `${visible.length} location${visible.length !== 1 ? 's' : ''}`;
+}
+
+function loadMap(days) {
+    currentDays = days;
+    document.getElementById('mapSubtitle').textContent =
+        `Top locations — last ${days} day${days !== 1 ? 's' : ''}`;
+
+    fetch(`/api/map-incidents?days=${days}`)
+        .then(r => r.json())
+        .then(data => {
+            allData = data;
+            buildLegend(data);
+        });
+}
+
+document.getElementById('mapPeriod').addEventListener('change', e => loadMap(+e.target.value));
+loadMap(30);
+</script>
+
+
+</body>
+</html>

@@ -29,6 +29,10 @@ python3 app.py
 # http://127.0.0.1:5000/forecast  — Ridge regression forecast + confidence band
 # http://127.0.0.1:5000/recent    — pipeline log: last 10 incidents + calls
 
+# Rebuild the static GitHub Pages snapshot (after a data refresh)
+python3 scripts/build_static.py       # writes docs/ (pages + ~1,800 API JSON files)
+python3 -m http.server 8080 --directory docs   # preview at http://localhost:8080
+
 # Full data reset (wipe + reload from Socrata)
 # 1. Truncate tables, flush Redis — see "Data reset" section below
 # 2. python3 scripts/backfill_incidents.py   (~8-10 hrs, run overnight)
@@ -46,6 +50,7 @@ scripts/
   run_pipeline.py     — incremental pipeline (smart date detection + logging)
   backfill_incidents.py — historical load, year-by-year (safe to re-run after TRUNCATE)
   train_forecast.py   — Ridge regression model: reads daily_trends, writes crime_forecast
+  build_static.py     — freezes the site into docs/ for GitHub Pages (see "Static snapshot")
 dags/
   sfcrime_pipeline.py — Airflow DAGs (symlinked from ~/airflow/dags/)
 sfcrime_dbt/
@@ -59,12 +64,16 @@ sfcrime_dbt/
 ml/
   forecast_model.pkl  — serialized Ridge model (gitignored, rebuilt by train_forecast.py)
 templates/
+  base.html           — shared layout: masthead, nav, footer, Chart.js theme; all pages extend it
   index.html          — overview: KPI cards + emoji-marker intersection map + legend
   district.html       — by neighborhood: date range, accordion, expandable charts
   trends.html         — daily bar/line, month-by-month (year picker), all-time quarterly
   category.html       — by category: date range, expandable time distribution charts
   forecast.html       — actual vs predicted chart, shaded confidence band, KPI strip
   recent.html         — pipeline log: last 10 incidents + calls
+static/
+  style.css           — all site styling (served at /static/style.css)
+docs/                 — generated static snapshot for GitHub Pages (see "Static snapshot"); committed
 app.py                — Flask web server + Redis caching
 logs/
   pipeline.log        — rotating log from run_pipeline.py (5MB, 3 backups)
@@ -72,6 +81,8 @@ Dockerfile            — python:3.12-slim, gunicorn on port 8080
 Procfile              — web: gunicorn app:app
 runtime.txt           — python-3.12 (Fly.io)
 ```
+
+All page templates extend `base.html`. Each page route in `app.py` passes `active_page=` (for nav highlighting); a `@context_processor` injects `current_date` into the masthead.
 
 ## Flask routes
 Pages:
@@ -184,6 +195,16 @@ POSTGRES_URL=postgresql://localhost/sfcrime
 ```
 For Fly.io: app reads `POSTGRES_URL` then falls back to `DATABASE_URL` (auto-set by Fly when Postgres is attached). `REDIS_URL` must be set manually via `fly secrets set`.
 
+## Static snapshot (GitHub Pages)
+`scripts/build_static.py` freezes the whole site into `docs/` for hosting at https://yourrem.github.io/SF-Crime-Site/ (Pages → main branch → /docs). The stack (Postgres/Redis/Airflow) can't run on Pages, so the script:
+- Imports `app` and uses `app.test_client()` (sets `REDIS_URL=""` first to force SimpleCache) — no running server needed.
+- Captures each rendered page (KPIs and `/recent` tables freeze automatically since they're server-rendered) and rewrites root-relative links (`/district` → `district.html`, `/static/...` → `static/...`).
+- Snapshots every UI-reachable API response to `docs/api/<endpoint>__<sorted-params>.json` (~1,800 files, ~1 MB): all 5 preset ranges × every neighborhood/category × 4 granularities, all map/cluster params, every year.
+- Injects a `fetch` shim into each page that maps `/api/...` calls to those JSON files. The filename-key function is implemented **identically in Python and JS** — keep them in sync. Includes a monthly-year clamp (year-rollover) and a 404→empty-array fallback.
+- Injects a "static snapshot as of <latest_date>" banner and hides the custom date-range inputs (preset ranges only).
+
+Rebuild after every data refresh (`python3 scripts/build_static.py`), then commit `docs/`. Re-running wipes and regenerates `docs/` deterministically (except `crime-clusters` files, which vary — `ORDER BY RANDOM()` sampling).
+
 ## Chart color palette
 10-color muted palette used consistently across all Chart.js charts:
 ```js
@@ -200,6 +221,7 @@ function colorFor(name) {
 Hash is stable — a name always maps to the same color regardless of sort order.
 
 ## Gotchas
+- **Socrata `$select` is WAF-blocked (403)** — SF's edge WAF returns `403 Forbidden` (nginx, not a Socrata JSON error) for any query string containing the substring `select`, flagging it as SQL injection. It's token-independent. `etl/extract.py` therefore fetches full rows (no `$select`) and subsets to `INCIDENT_FIELDS` client-side. Don't reintroduce `$select`/`$query`. `$where`/`$order`/`$limit` are fine.
 - **`incidents_by_district` bug** — mart has inverted `AND NOT is_valid_location` filter, returns 0 rows. Do NOT fix. All district/neighborhood API endpoints query `analytics.stg_incidents` directly instead.
 - **SQLAlchemy text() colon parsing** — `':00'` is parsed as bind param `00`. Use `chr(58)` to produce a literal colon in SQL strings.
 - **JS let/const TDZ** — don't call functions that reference `let`/`const` variables before their declaration line in the same script block.

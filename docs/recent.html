@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Log — SF Crime Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    
+<style>
+.static-banner {
+    background: #111;
+    color: #f5f2ec;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    text-align: center;
+    padding: 0.45rem 1rem;
+    letter-spacing: 0.4px;
+}
+.static-banner a { color: #c4952e; }
+#customBtn, #customWrap { display: none !important; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+    var MIN_YEAR = 2018, MAX_YEAR = 2026;
+    var origFetch = window.fetch.bind(window);
+    function sanitize(s) {
+        var out = '', enc = new TextEncoder();
+        for (var ch of s) {
+            if (/^[A-Za-z0-9-]$/.test(ch)) { out += ch; continue; }
+            var bytes = enc.encode(ch);
+            for (var i = 0; i < bytes.length; i++) {
+                out += '_' + bytes[i].toString(16).toUpperCase().padStart(2, '0');
+            }
+        }
+        return out;
+    }
+    window.fetch = function (input, init) {
+        var raw = (typeof input === 'string') ? input : (input && input.url) || '';
+        if (raw.indexOf('/api/') !== 0) return origFetch(input, init);
+        var u = new URL(raw, window.location.origin);
+        var endpoint = u.pathname.slice(5).replace(/\//g, '_');
+        var pairs = Array.from(u.searchParams.entries());
+        if (endpoint === 'monthly') {
+            pairs = pairs.map(function (p) {
+                if (p[0] !== 'year') return p;
+                return ['year', String(Math.min(Math.max(+p[1], MIN_YEAR), MAX_YEAR))];
+            });
+        }
+        pairs.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+        var name = endpoint + (pairs.length
+            ? '__' + pairs.map(function (p) { return sanitize(p[0]) + '-' + sanitize(p[1]); }).join('__')
+            : '');
+        return origFetch('api/' + name + '.json').then(function (r) {
+            if (r.ok) return r;
+            var body = (endpoint === 'monthly') ? '{"months":[],"years":[]}' : '[]';
+            return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+        });
+    };
+})();
+</script>
+<div class="static-banner">Static snapshot &mdash; data through September 13, 2026. Preset views are fully interactive; the live pipeline (Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) runs from the <a href="https://github.com/yourrem/SF-Crime-Site">source on GitHub</a>.</div>
+
+<header class="masthead">
+    <div class="masthead-inner">
+        <div class="masthead-top-rule"></div>
+        <div class="masthead-meta-line">
+            <span class="masthead-date">Sunday, September 13, 2026</span>
+            <span class="masthead-edition">San Francisco, California</span>
+            <span class="masthead-tagline">Public Safety Data</span>
+        </div>
+        <div class="masthead-nameplate">
+            <div class="masthead-name">SF Crime Desk</div>
+            <p class="masthead-sub">San Francisco Police Department Incident Reports — 2018 to Present</p>
+        </div>
+        <nav class="masthead-nav">
+            <a href="index.html" class="">Overview</a>
+            <a href="district.html" class="">By Neighborhood</a>
+            <a href="category.html" class="">By Category</a>
+            <a href="trends.html" class="">Trends</a>
+            <a href="forecast.html" class="">Forecast</a>
+            <a href="recent.html" class="active">Pipeline Log</a>
+            <a href="clusters.html" class="">Crime Clusters</a>
+        </nav>
+        <div class="masthead-bottom-rule"></div>
+    </div>
+</header>
+
+<div class="layout">
+    <main>
+        
+<div class="page-header">
+    <h1>Pipeline Log</h1>
+    <p>The 10 most recently loaded records from each feed — use this to verify the pipeline is running.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Recent Incidents</h2>
+        <span>Last 10 loaded — from public.incidents</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date / Time</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Neighborhood</th>
+                <th>District</th>
+                <th>Resolution</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 23:45:00
+                    
+                </td>
+                <td class="category">Other Miscellaneous</td>
+                <td class="description">Investigative Detention</td>
+                <td>Sunset/Parkside</td>
+                <td>Taraval</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 23:45:00
+                    
+                </td>
+                <td class="category">Malicious Mischief</td>
+                <td class="description">Malicious Mischief, Vandalism to Property</td>
+                <td>Sunset/Parkside</td>
+                <td>Taraval</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 23:31:00
+                    
+                </td>
+                <td class="category">Assault</td>
+                <td class="description">Assault, Aggravated, W/ Force</td>
+                <td>Bernal Heights</td>
+                <td>Ingleside</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 23:31:00
+                    
+                </td>
+                <td class="category">Robbery</td>
+                <td class="description">Robbery, W/ Force</td>
+                <td>Bernal Heights</td>
+                <td>Ingleside</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:55:00
+                    
+                </td>
+                <td class="category">Non-Criminal</td>
+                <td class="description">Aided Case</td>
+                <td>Castro/Upper Market</td>
+                <td>Park</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:55:00
+                    
+                </td>
+                <td class="category">Other Miscellaneous</td>
+                <td class="description">Investigative Detention</td>
+                <td>Castro/Upper Market</td>
+                <td>Park</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:50:00
+                    
+                </td>
+                <td class="category">Robbery</td>
+                <td class="description">Robbery, Street or Public Place, W/ Force</td>
+                <td>Castro/Upper Market</td>
+                <td>Mission</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:36:00
+                    
+                </td>
+                <td class="category">Drug Offense</td>
+                <td class="description">Opiates Offense</td>
+                <td>South Of Market</td>
+                <td>Tenderloin</td>
+                <td class="resolution">Cite Or Arrest Adult</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:36:00
+                    
+                </td>
+                <td class="category">Drug Offense</td>
+                <td class="description">Narcotics Paraphernalia, Possession of</td>
+                <td>South Of Market</td>
+                <td>Tenderloin</td>
+                <td class="resolution">Cite Or Arrest Adult</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-13 22:10:00
+                    
+                </td>
+                <td class="category">Larceny Theft</td>
+                <td class="description">Theft, From Person, $200-$950 (other than Pickpocket)</td>
+                <td>South Of Market</td>
+                <td>Southern</td>
+                <td class="resolution">Open Or Active</td>
+            </tr>
+            
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Recent Calls for Service</h2>
+        <span>Last 10 loaded — from public.calls</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Received</th>
+                <th>Call Type</th>
+                <th>Neighborhood</th>
+                <th>District</th>
+                <th>Priority</th>
+                <th>Disposition</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:30
+                    
+                </td>
+                <td class="category">HOMELESS COMPLAINT</td>
+                <td>Golden Gate Park</td>
+                <td>Taraval</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">ND</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:24
+                    
+                </td>
+                <td class="category">PROWLER</td>
+                <td>Financial District/South Beach</td>
+                <td>Southern</td>
+                <td>
+                    
+                        <span class="badge priority-A">PA</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:24
+                    
+                </td>
+                <td class="category">FIGHT W/WEAPONS</td>
+                <td>Tenderloin</td>
+                <td>Tenderloin</td>
+                <td>
+                    
+                        <span class="badge priority-A">PA</span>
+                    
+                </td>
+                <td class="resolution">HAN</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:21
+                    
+                </td>
+                <td class="category">THREATS / HARASSMENT</td>
+                <td>Haight Ashbury</td>
+                <td>Park</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:19
+                    
+                </td>
+                <td class="category">SUSPICIOUS PERSON</td>
+                <td>Tenderloin</td>
+                <td>Tenderloin</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">CIT</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:17
+                    
+                </td>
+                <td class="category">FIGHT NO WEAPON</td>
+                <td>Bayview Hunters Point</td>
+                <td>Bayview</td>
+                <td>
+                    
+                        <span class="badge priority-B">PB</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:15
+                    
+                </td>
+                <td class="category">SUSPICIOUS PERSON</td>
+                <td>Mission</td>
+                <td>Mission</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">ADV</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:13
+                    
+                </td>
+                <td class="category">FIGHT NO WEAPON</td>
+                <td>Marina</td>
+                <td>Northern</td>
+                <td>
+                    
+                        <span class="badge priority-B">PB</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:11
+                    
+                </td>
+                <td class="category">ASSAULT / BATTERY</td>
+                <td>South Of Market</td>
+                <td>Southern</td>
+                <td>
+                    
+                        <span class="badge priority-A">PA</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-14T13:08
+                    
+                </td>
+                <td class="category">SIT/LIE ENFORCEMENT</td>
+                <td>Mission</td>
+                <td>Mission</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+        </tbody>
+    </table>
+</div>
+
+    </main>
+</div>
+
+<footer>
+    <div class="footer-sources">
+        <span class="footer-sources-label">Sources</span>
+        <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data Portal</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports (2018–Present)</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
+    </div>
+    <div class="footer-credit">
+        Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+    </div>
+</footer>
+
+<script>
+window.NP_TOOLTIP = {
+    backgroundColor: '#fff',
+    borderColor: '#111',
+    borderWidth: 1,
+    cornerRadius: 0,
+    titleColor: '#111',
+    bodyColor: '#444',
+    titleFont: { family: "'DM Mono', monospace", size: 11 },
+    bodyFont:  { family: "'Source Serif 4', serif", size: 11 },
+    padding: 10,
+};
+window.NP_AXIS = {
+    x: {
+        grid: { display: false },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888', maxRotation: 0 },
+        border: { color: '#111' },
+    },
+    y: {
+        grid: { color: '#f0ece5' },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888' },
+        border: { color: '#111', dash: [3, 3] },
+    }
+};
+</script>
+
+
+</body>
+</html>

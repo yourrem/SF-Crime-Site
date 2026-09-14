@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecast — SF Crime Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    
+<style>
+.static-banner {
+    background: #111;
+    color: #f5f2ec;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    text-align: center;
+    padding: 0.45rem 1rem;
+    letter-spacing: 0.4px;
+}
+.static-banner a { color: #c4952e; }
+#customBtn, #customWrap { display: none !important; }
+</style>
+</head>
+<body>
+<script>
+(function () {
+    var MIN_YEAR = 2018, MAX_YEAR = 2026;
+    var origFetch = window.fetch.bind(window);
+    function sanitize(s) {
+        var out = '', enc = new TextEncoder();
+        for (var ch of s) {
+            if (/^[A-Za-z0-9-]$/.test(ch)) { out += ch; continue; }
+            var bytes = enc.encode(ch);
+            for (var i = 0; i < bytes.length; i++) {
+                out += '_' + bytes[i].toString(16).toUpperCase().padStart(2, '0');
+            }
+        }
+        return out;
+    }
+    window.fetch = function (input, init) {
+        var raw = (typeof input === 'string') ? input : (input && input.url) || '';
+        if (raw.indexOf('/api/') !== 0) return origFetch(input, init);
+        var u = new URL(raw, window.location.origin);
+        var endpoint = u.pathname.slice(5).replace(/\//g, '_');
+        var pairs = Array.from(u.searchParams.entries());
+        if (endpoint === 'monthly') {
+            pairs = pairs.map(function (p) {
+                if (p[0] !== 'year') return p;
+                return ['year', String(Math.min(Math.max(+p[1], MIN_YEAR), MAX_YEAR))];
+            });
+        }
+        pairs.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+        var name = endpoint + (pairs.length
+            ? '__' + pairs.map(function (p) { return sanitize(p[0]) + '-' + sanitize(p[1]); }).join('__')
+            : '');
+        return origFetch('api/' + name + '.json').then(function (r) {
+            if (r.ok) return r;
+            var body = (endpoint === 'monthly') ? '{"months":[],"years":[]}' : '[]';
+            return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+        });
+    };
+})();
+</script>
+<div class="static-banner">Static snapshot &mdash; data through September 13, 2026. Preset views are fully interactive; the live pipeline (Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) runs from the <a href="https://github.com/yourrem/SF-Crime-Site">source on GitHub</a>.</div>
+
+<header class="masthead">
+    <div class="masthead-inner">
+        <div class="masthead-top-rule"></div>
+        <div class="masthead-meta-line">
+            <span class="masthead-date">Sunday, September 13, 2026</span>
+            <span class="masthead-edition">San Francisco, California</span>
+            <span class="masthead-tagline">Public Safety Data</span>
+        </div>
+        <div class="masthead-nameplate">
+            <div class="masthead-name">SF Crime Desk</div>
+            <p class="masthead-sub">San Francisco Police Department Incident Reports — 2018 to Present</p>
+        </div>
+        <nav class="masthead-nav">
+            <a href="index.html" class="">Overview</a>
+            <a href="district.html" class="">By Neighborhood</a>
+            <a href="category.html" class="">By Category</a>
+            <a href="trends.html" class="">Trends</a>
+            <a href="forecast.html" class="active">Forecast</a>
+            <a href="recent.html" class="">Pipeline Log</a>
+            <a href="clusters.html" class="">Crime Clusters</a>
+        </nav>
+        <div class="masthead-bottom-rule"></div>
+    </div>
+</header>
+
+<div class="layout">
+    <main>
+        
+<div class="page-header">
+    <h1>Crime Forecast</h1>
+    <p>30-day ahead forecast of daily incident counts using a Ridge regression model trained on 8+ years of SFPD data. Retrained nightly via Airflow.</p>
+</div>
+
+<div class="kpi-strip">
+    <div class="kpi">
+        <div class="kpi-label">Test MAE</div>
+        <div class="kpi-value" id="kpiMae">—</div>
+        <div class="kpi-sub">incidents / day</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Confidence Band</div>
+        <div class="kpi-value" id="kpiRmse">—</div>
+        <div class="kpi-sub">± RMSE incidents / day</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Training Data</div>
+        <div class="kpi-value" id="kpiTrainRows">—</div>
+        <div class="kpi-sub">days of history</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Last Retrained</div>
+        <div class="kpi-value" style="font-size:1rem; padding-top:0.3rem; font-family:'Playfair Display',serif;" id="kpiTrained">—</div>
+        <div class="kpi-sub">Airflow sfcrime_incidents_daily</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Actual vs Predicted — Daily Incidents</h2>
+        <span>Last 90 days actual + 30-day forecast</span>
+    </div>
+    <div class="card-body">
+        <div class="legend">
+            <div class="legend-item-row">
+                <div class="legend-line" style="background:#2D5FA6;"></div>
+                <span>Actual incidents</span>
+            </div>
+            <div class="legend-item-row">
+                <div class="legend-line dashed"></div>
+                <span>Predicted (30-day forecast)</span>
+            </div>
+            <div class="legend-item-row">
+                <div class="legend-band"></div>
+                <span>Confidence band (±1 RMSE)</span>
+            </div>
+        </div>
+        <canvas id="forecastChart" height="90"></canvas>
+    </div>
+    <div class="model-note">
+        <strong>Model:</strong> Ridge regression &nbsp;|&nbsp;
+        <strong>Features:</strong> lag-1, lag-7, lag-30 incident counts; day of week; month; year; weekend flag &nbsp;|&nbsp;
+        <strong>Evaluation:</strong> 90-day held-out test set &nbsp;|&nbsp;
+        <strong>Confidence band:</strong> ±1 RMSE from test evaluation
+    </div>
+</div>
+
+    </main>
+</div>
+
+<footer>
+    <div class="footer-sources">
+        <span class="footer-sources-label">Sources</span>
+        <a href="https://data.sfgov.org" target="_blank" rel="noopener">SF Open Data Portal</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Incident-Reports-2018-to-Present/wg3w-h783" target="_blank" rel="noopener">Incident Reports (2018–Present)</a>
+        <a href="https://data.sfgov.org/Public-Safety/Police-Department-Calls-for-Service/gnap-fj3t" target="_blank" rel="noopener">Calls for Service</a>
+    </div>
+    <div class="footer-credit">
+        Data from <a href="https://data.sfgov.org">SF Open Data Portal</a> via Socrata API. Updated daily.
+    </div>
+</footer>
+
+<script>
+window.NP_TOOLTIP = {
+    backgroundColor: '#fff',
+    borderColor: '#111',
+    borderWidth: 1,
+    cornerRadius: 0,
+    titleColor: '#111',
+    bodyColor: '#444',
+    titleFont: { family: "'DM Mono', monospace", size: 11 },
+    bodyFont:  { family: "'Source Serif 4', serif", size: 11 },
+    padding: 10,
+};
+window.NP_AXIS = {
+    x: {
+        grid: { display: false },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888', maxRotation: 0 },
+        border: { color: '#111' },
+    },
+    y: {
+        grid: { color: '#f0ece5' },
+        ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#888' },
+        border: { color: '#111', dash: [3, 3] },
+    }
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const fmt  = n => n.toLocaleString();
+const fmtF = n => Number(n).toFixed(1);
+
+const ACTUAL_COLOR = '#2D5FA6';
+const PRED_COLOR   = '#8B1A1A';
+
+fetch('/api/forecast')
+    .then(r => r.json())
+    .then(data => {
+        if (data.metrics) {
+            document.getElementById('kpiMae').textContent       = fmtF(data.metrics.mae);
+            document.getElementById('kpiRmse').textContent      = fmtF(data.metrics.rmse);
+            document.getElementById('kpiTrainRows').textContent = fmt(data.metrics.train_rows);
+            document.getElementById('kpiTrained').textContent   = data.metrics.trained_at || '—';
+        }
+
+        const actualDates = data.actuals.map(d => d.date);
+        const predDates   = data.predictions.map(d => d.date);
+        const allDates    = [...actualDates, ...predDates];
+
+        const predMap = {};
+        data.predictions.forEach(d => { predMap[d.date] = d; });
+
+        const actualVals = allDates.map(d => {
+            const a = data.actuals.find(x => x.date === d);
+            return a ? a.count : null;
+        });
+
+        const predVals  = allDates.map(d => predMap[d] ? predMap[d].predicted : null);
+        const upperVals = allDates.map(d => predMap[d] ? predMap[d].upper    : null);
+        const lowerVals = allDates.map(d => predMap[d] ? predMap[d].lower    : null);
+
+        const labels = allDates.map(d => {
+            const day = new Date(d).getUTCDate();
+            return (day === 1 || day === 15) ? d.slice(5) : '';
+        });
+
+        new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: allDates,
+                datasets: [
+                    {
+                        label: 'Actual',
+                        data: actualVals,
+                        borderColor: ACTUAL_COLOR,
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Predicted',
+                        data: predVals,
+                        borderColor: PRED_COLOR,
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        tension: 0.2,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Upper bound',
+                        data: upperVals,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        fill: '+1',
+                        backgroundColor: 'rgba(139, 26, 26, 0.12)',
+                        spanGaps: false,
+                    },
+                    {
+                        label: 'Lower bound',
+                        data: lowerVals,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        fill: false,
+                        spanGaps: false,
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        ...window.NP_TOOLTIP,
+                        filter: item => item.dataset.label !== 'Upper bound' && item.dataset.label !== 'Lower bound',
+                        callbacks: {
+                            label: ctx => {
+                                if (ctx.parsed.y === null) return null;
+                                const d = predMap[allDates[ctx.dataIndex]];
+                                if (d && ctx.dataset.label === 'Predicted') {
+                                    return `  Predicted: ${fmtF(ctx.parsed.y)}  (${fmtF(d.lower)}–${fmtF(d.upper)})`;
+                                }
+                                return `  ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ...window.NP_AXIS.x,
+                        ticks: {
+                            ...window.NP_AXIS.x.ticks,
+                            callback: (val, i) => labels[i],
+                        },
+                    },
+                    y: { ...window.NP_AXIS.y, min: 0 }
+                }
+            }
+        });
+    });
+</script>
+
+
+</body>
+</html>
