@@ -77,9 +77,6 @@ docs/                 — generated static snapshot for GitHub Pages (see "Stati
 app.py                — Flask web server + Redis caching
 logs/
   pipeline.log        — rotating log from run_pipeline.py (5MB, 3 backups)
-Dockerfile            — python:3.12-slim, gunicorn on port 8080
-Procfile              — web: gunicorn app:app
-runtime.txt           — python-3.12 (Fly.io)
 ```
 
 All page templates extend `base.html`. Each page route in `app.py` passes `active_page=` (for nav highlighting); a `@context_processor` injects `current_date` into the masthead.
@@ -193,7 +190,7 @@ Both from data.sfgov.org (Socrata API — `SOCRATA_APP_TOKEN` in `.env`):
 SOCRATA_APP_TOKEN=your_token_here
 POSTGRES_URL=postgresql://localhost/sfcrime
 ```
-For Fly.io: app reads `POSTGRES_URL` then falls back to `DATABASE_URL` (auto-set by Fly when Postgres is attached). `REDIS_URL` must be set manually via `fly secrets set`.
+`REDIS_URL` is optional — if unset, the app uses an in-memory SimpleCache (see Caching).
 
 ## Static snapshot (GitHub Pages)
 `scripts/build_static.py` freezes the whole site into `docs/` for hosting at https://yourrem.github.io/SF-Crime-Site/ (Pages → main branch → /docs). The stack (Postgres/Redis/Airflow) can't run on Pages, so the script:
@@ -225,7 +222,6 @@ Hash is stable — a name always maps to the same color regardless of sort order
 - **`incidents_by_district` bug** — mart has inverted `AND NOT is_valid_location` filter, returns 0 rows. Do NOT fix. All district/neighborhood API endpoints query `analytics.stg_incidents` directly instead.
 - **SQLAlchemy text() colon parsing** — `':00'` is parsed as bind param `00`. Use `chr(58)` to produce a literal colon in SQL strings.
 - **JS let/const TDZ** — don't call functions that reference `let`/`const` variables before their declaration line in the same script block.
-- **Fly.io env** — `POSTGRES_URL` is not auto-set; app falls back to `DATABASE_URL`. `REDIS_URL` must be set manually.
 - **Date range anchoring** — all date-picker pages fetch `/api/latest-date` on init and anchor range buttons to `MAX(incident_date)`, not `new Date()`. This prevents 24h/7d tabs from returning no data when the pipeline hasn't run today.
 - **`/api/map-incidents` CTE** — groups incidents by intersection with full per-category breakdown. The `top_ix` CTE limits to 700 intersections before joining back to category rows to avoid returning 10k+ rows.
 
@@ -236,5 +232,5 @@ Hash is stable — a name always maps to the same color regardless of sort order
 - **Backfill year-by-year** — Socrata times out at high offsets; chunking by year avoids this
 - **Flag, don't delete** — bad data flagged in dbt staging (`is_unfounded`, `is_non_criminal`, `is_valid_location`); mart models filter
 - **stg_incidents as TABLE** — materialized as table (not view) with composite indexes; eliminates full table scans on API queries
-- **Redis with SimpleCache fallback** — app starts cleanly without Redis; Fly.io sets REDIS_URL in secrets
+- **Redis with SimpleCache fallback** — app starts cleanly without Redis; set `REDIS_URL` to enable Redis caching
 - **Recursive forecast** — each predicted value feeds next day's lag inputs; avoids data leakage in forward projection

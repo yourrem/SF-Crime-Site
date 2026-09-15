@@ -1,10 +1,8 @@
 flask
-gunicorn
 scikit-learn
 joblib
 requests
 pandas
-sodapy
 python-dotenv
 psycopg2-binary
 sqlalchemy

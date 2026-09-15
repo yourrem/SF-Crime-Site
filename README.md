@@ -4,7 +4,7 @@
 
 An end-to-end data engineering + machine learning system built on 8+ years of SFPD incident data from SF Open Data. Pulls data from a live API, loads it into PostgreSQL, transforms it with dbt, forecasts with Ridge regression, and displays everything on a Flask web app — fully automated with Apache Airflow.
 
-`Python · PostgreSQL · dbt · Apache Airflow · scikit-learn · Flask · Redis · Docker · Leaflet · Chart.js`
+`Python · PostgreSQL · dbt · Apache Airflow · scikit-learn · Flask · Redis · Leaflet · Chart.js`
 
 ## Engineering highlights
 
@@ -48,7 +48,7 @@ Socrata API (SF Open Data)
 
 **Orchestration:** Apache Airflow — `fetch_incidents → run_dbt → retrain_forecast` daily at 6am; calls for service every 10 minutes.
 
-**Deployment:** Docker + Fly.io. Redis on managed cloud (Flask-Caching, 5-min TTL).
+**Hosting:** the live app runs locally against Postgres/Redis; a static snapshot is published to GitHub Pages for the public demo (see [Static Demo](#static-demo)).
 
 ## Tech Stack
 
@@ -61,7 +61,7 @@ Socrata API (SF Open Data)
 | Machine Learning | scikit-learn (Ridge), joblib |
 | Caching | Redis, Flask-Caching |
 | Web | Flask, Chart.js 4.4, Leaflet.js |
-| Deployment | Docker, Fly.io |
+| Hosting | GitHub Pages (static snapshot) |
 | Language | Python 3.12 |
 
 ## Web App
@@ -124,9 +124,7 @@ templates/
   trends.html             Daily, monthly, quarterly trend charts
   forecast.html           Actual vs predicted + confidence band
   recent.html             Pipeline log
-app.py                    Flask application (18 API endpoints, Redis caching)
-Dockerfile                python:3.12-slim, gunicorn on port 8080
-Procfile                  web: gunicorn app:app
+app.py                    Flask application (14 API endpoints, Redis caching)
 ```
 
 ## Setup

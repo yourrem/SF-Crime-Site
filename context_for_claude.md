@@ -2,7 +2,7 @@
 
 ## What I Built
 
-I built an end-to-end data engineering + machine learning project called **SF Crime Tracker** that pulls real SFPD incident data from the SF Open Data Portal (Socrata API), loads it into a PostgreSQL database, transforms it with dbt, and displays it on a Flask web app. The project is deployed on Fly.io and is intended as a portfolio/resume project.
+I built an end-to-end data engineering + machine learning project called **SF Crime Tracker** that pulls real SFPD incident data from the SF Open Data Portal (Socrata API), loads it into a PostgreSQL database, transforms it with dbt, and displays it on a Flask web app. The project is published as a static demo on GitHub Pages and is intended as a portfolio/resume project.
 
 ## The Data
 

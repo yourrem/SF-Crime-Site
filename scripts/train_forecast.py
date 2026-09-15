@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_URL     = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
+DB_URL     = os.getenv("POSTGRES_URL")
 ML_DIR     = os.path.join(os.path.dirname(__file__), "..", "ml")
 MODEL_PATH = os.path.join(ML_DIR, "forecast_model.pkl")
 FORECAST_DAYS = 30

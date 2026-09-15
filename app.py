@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-engine = create_engine(os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL"))
+engine = create_engine(os.getenv("POSTGRES_URL"))
 
 @app.context_processor
 def inject_date():
@@ -374,23 +374,6 @@ def api_category_time():
         rows = conn.execute(text(sql),
             {"category": category, "start": start, "end": end}).fetchall()
     return jsonify([{"label": r[1], "total": r[2]} for r in rows])
-
-
-@app.route("/api/districts/summary")
-def api_districts_summary():
-    days = request.args.get("days", 30, type=int)
-    with engine.connect() as conn:
-        rows = conn.execute(text("""
-            SELECT police_district, COUNT(*) AS total
-            FROM analytics.stg_incidents
-            WHERE incident_date >= now() - interval ':days days'
-              AND police_district IS NOT NULL
-              AND police_district != 'Out Of Sf'
-              AND NOT is_unfounded AND NOT is_non_criminal AND is_valid_location
-            GROUP BY police_district
-            ORDER BY total DESC
-        """.replace(":days days", f"{days} days"))).fetchall()
-    return jsonify([{"district": r[0], "total": r[1]} for r in rows])
 
 
 @app.route("/api/neighborhoods")
