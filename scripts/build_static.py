@@ -125,22 +125,34 @@ SHIM_JS = """<script>
 BANNER_CSS = """<style>
 .static-banner {
     background: #111;
-    color: #f5f2ec;
+    color: #cfc8ba;
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
     text-align: center;
-    padding: 0.45rem 1rem;
-    letter-spacing: 0.4px;
+    padding: 0.5rem 1rem;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
 }
-.static-banner a { color: #c4952e; }
+.static-banner .tag {
+    color: #111;
+    background: #c4952e;
+    font-weight: 500;
+    padding: 1px 7px;
+    margin-right: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+}
+.static-banner a { color: #e0b354; text-decoration: underline; text-underline-offset: 2px; }
 #customBtn, #customWrap { display: none !important; }
 </style>"""
 
 BANNER_HTML = (
-    '<div class="static-banner">Static snapshot &mdash; data through __DATA_DATE__. '
-    'Preset views are fully interactive; the live pipeline '
-    '(Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) runs from the '
-    f'<a href="{REPO_URL}">source on GitHub</a>.</div>'
+    '<div class="static-banner"><span class="tag">Portfolio demo</span>'
+    'Snapshot of the live app as of __DATA_DATE__ &mdash; every chart, map, and filter '
+    'works, served by pre-rendered API responses. The full data pipeline '
+    '(Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) and source are on '
+    f'<a href="{REPO_URL}">GitHub</a>.</div>'
 )
 
 
