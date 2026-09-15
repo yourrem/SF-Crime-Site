@@ -12,14 +12,25 @@
 <style>
 .static-banner {
     background: #111;
-    color: #f5f2ec;
+    color: #cfc8ba;
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
     text-align: center;
-    padding: 0.45rem 1rem;
-    letter-spacing: 0.4px;
+    padding: 0.5rem 1rem;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
 }
-.static-banner a { color: #c4952e; }
+.static-banner .tag {
+    color: #111;
+    background: #c4952e;
+    font-weight: 500;
+    padding: 1px 7px;
+    margin-right: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+}
+.static-banner a { color: #e0b354; text-decoration: underline; text-underline-offset: 2px; }
 #customBtn, #customWrap { display: none !important; }
 </style>
 </head>
@@ -63,7 +74,7 @@
     };
 })();
 </script>
-<div class="static-banner">Static snapshot &mdash; data through September 13, 2026. Preset views are fully interactive; the live pipeline (Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) runs from the <a href="https://github.com/yourrem/SF-Crime-Site">source on GitHub</a>.</div>
+<div class="static-banner"><span class="tag">Portfolio demo</span>Snapshot of the live app as of September 13, 2026 &mdash; every chart, map, and filter works, served by pre-rendered API responses. The full data pipeline (Airflow &middot; dbt &middot; Postgres &middot; scikit-learn) and source are on <a href="https://github.com/yourrem/SF-Crime-Site">GitHub</a>.</div>
 
 <header class="masthead">
     <div class="masthead-inner">
@@ -122,8 +133,8 @@
                         2026-09-13 23:45:00
                     
                 </td>
-                <td class="category">Other Miscellaneous</td>
-                <td class="description">Investigative Detention</td>
+                <td class="category">Malicious Mischief</td>
+                <td class="description">Malicious Mischief, Vandalism to Property</td>
                 <td>Sunset/Parkside</td>
                 <td>Taraval</td>
                 <td class="resolution">Open Or Active</td>
@@ -135,8 +146,8 @@
                         2026-09-13 23:45:00
                     
                 </td>
-                <td class="category">Malicious Mischief</td>
-                <td class="description">Malicious Mischief, Vandalism to Property</td>
+                <td class="category">Other Miscellaneous</td>
+                <td class="description">Investigative Detention</td>
                 <td>Sunset/Parkside</td>
                 <td>Taraval</td>
                 <td class="resolution">Open Or Active</td>
@@ -148,8 +159,8 @@
                         2026-09-13 23:31:00
                     
                 </td>
-                <td class="category">Assault</td>
-                <td class="description">Assault, Aggravated, W/ Force</td>
+                <td class="category">Robbery</td>
+                <td class="description">Robbery, W/ Force</td>
                 <td>Bernal Heights</td>
                 <td>Ingleside</td>
                 <td class="resolution">Open Or Active</td>
@@ -161,8 +172,8 @@
                         2026-09-13 23:31:00
                     
                 </td>
-                <td class="category">Robbery</td>
-                <td class="description">Robbery, W/ Force</td>
+                <td class="category">Assault</td>
+                <td class="description">Assault, Aggravated, W/ Force</td>
                 <td>Bernal Heights</td>
                 <td>Ingleside</td>
                 <td class="resolution">Open Or Active</td>
@@ -271,28 +282,28 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:30
+                        2026-09-15T13:00
                     
                 </td>
-                <td class="category">HOMELESS COMPLAINT</td>
-                <td>Golden Gate Park</td>
-                <td>Taraval</td>
+                <td class="category">MEET W/CITY EMPLOYEE</td>
+                <td>Nob Hill</td>
+                <td>Northern</td>
                 <td>
                     
-                        <span class="badge priority-C">PC</span>
+                        <span class="badge priority-A">PA</span>
                     
                 </td>
-                <td class="resolution">ND</td>
+                <td class="resolution">—</td>
             </tr>
             
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:24
+                        2026-09-15T12:58
                     
                 </td>
-                <td class="category">PROWLER</td>
-                <td>Financial District/South Beach</td>
+                <td class="category">WANTED VEHICLE / SUB</td>
+                <td>South Of Market</td>
                 <td>Southern</td>
                 <td>
                     
@@ -305,63 +316,12 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:24
+                        2026-09-15T12:58
                     
                 </td>
-                <td class="category">FIGHT W/WEAPONS</td>
-                <td>Tenderloin</td>
-                <td>Tenderloin</td>
-                <td>
-                    
-                        <span class="badge priority-A">PA</span>
-                    
-                </td>
-                <td class="resolution">HAN</td>
-            </tr>
-            
-            <tr>
-                <td class="datetime">
-                    
-                        2026-09-14T13:21
-                    
-                </td>
-                <td class="category">THREATS / HARASSMENT</td>
-                <td>Haight Ashbury</td>
-                <td>Park</td>
-                <td>
-                    
-                        <span class="badge priority-C">PC</span>
-                    
-                </td>
-                <td class="resolution">—</td>
-            </tr>
-            
-            <tr>
-                <td class="datetime">
-                    
-                        2026-09-14T13:19
-                    
-                </td>
-                <td class="category">SUSPICIOUS PERSON</td>
-                <td>Tenderloin</td>
-                <td>Tenderloin</td>
-                <td>
-                    
-                        <span class="badge priority-C">PC</span>
-                    
-                </td>
-                <td class="resolution">CIT</td>
-            </tr>
-            
-            <tr>
-                <td class="datetime">
-                    
-                        2026-09-14T13:17
-                    
-                </td>
-                <td class="category">FIGHT NO WEAPON</td>
-                <td>Bayview Hunters Point</td>
-                <td>Bayview</td>
+                <td class="category">TRESPASSER</td>
+                <td>Mission</td>
+                <td>Mission</td>
                 <td>
                     
                         <span class="badge priority-B">PB</span>
@@ -373,7 +333,7 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:15
+                        2026-09-15T12:57
                     
                 </td>
                 <td class="category">SUSPICIOUS PERSON</td>
@@ -390,12 +350,12 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:13
+                        2026-09-15T12:57
                     
                 </td>
-                <td class="category">FIGHT NO WEAPON</td>
-                <td>Marina</td>
-                <td>Northern</td>
+                <td class="category">FIRE</td>
+                <td>Mission</td>
+                <td>Mission</td>
                 <td>
                     
                         <span class="badge priority-B">PB</span>
@@ -407,15 +367,15 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:11
+                        2026-09-15T12:55
                     
                 </td>
-                <td class="category">ASSAULT / BATTERY</td>
-                <td>South Of Market</td>
-                <td>Southern</td>
+                <td class="category">PASSING CALL</td>
+                <td>—</td>
+                <td>—</td>
                 <td>
                     
-                        <span class="badge priority-A">PA</span>
+                        <span class="badge priority-C">PC</span>
                     
                 </td>
                 <td class="resolution">—</td>
@@ -424,10 +384,61 @@
             <tr>
                 <td class="datetime">
                     
-                        2026-09-14T13:08
+                        2026-09-15T12:55
+                    
+                </td>
+                <td class="category">FIGHT NO WEAPON</td>
+                <td>South Of Market</td>
+                <td>Southern</td>
+                <td>
+                    
+                        <span class="badge priority-B">PB</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-15T12:53
                     
                 </td>
                 <td class="category">SIT/LIE ENFORCEMENT</td>
+                <td>Financial District/South Beach</td>
+                <td>Southern</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-15T12:52
+                    
+                </td>
+                <td class="category">BURGLARY</td>
+                <td>Inner Richmond</td>
+                <td>Richmond</td>
+                <td>
+                    
+                        <span class="badge priority-C">PC</span>
+                    
+                </td>
+                <td class="resolution">—</td>
+            </tr>
+            
+            <tr>
+                <td class="datetime">
+                    
+                        2026-09-15T12:50
+                    
+                </td>
+                <td class="category">SUSPICIOUS VEHICLE</td>
                 <td>Mission</td>
                 <td>Mission</td>
                 <td>
@@ -435,7 +446,7 @@
                         <span class="badge priority-C">PC</span>
                     
                 </td>
-                <td class="resolution">—</td>
+                <td class="resolution">CIT</td>
             </tr>
             
         </tbody>

@@ -4,6 +4,18 @@
 
 An end-to-end data engineering + machine learning system built on 8+ years of SFPD incident data from SF Open Data. Pulls data from a live API, loads it into PostgreSQL, transforms it with dbt, forecasts with Ridge regression, and displays everything on a Flask web app — fully automated with Apache Airflow.
 
+`Python · PostgreSQL · dbt · Apache Airflow · scikit-learn · Flask · Redis · Docker · Leaflet · Chart.js`
+
+## Engineering highlights
+
+A few problems worth calling out — the kind of thing I'd walk through in a review:
+
+- **Resilient incremental loading.** The pipeline queries `MAX(incident_date)` to detect exactly how many days it missed and pulls only those, so a skipped or failed run self-heals on the next execution instead of leaving a gap or double-loading.
+- **Idempotent upserts on a 1M-row table.** Loads go through a staging table + `INSERT … WHERE NOT IN`, so daily runs never re-process or wipe history — no `UNIQUE` constraint required on the raw table.
+- **Worked around a live API breakage.** SF's edge WAF started returning `403 Forbidden` for any SODA query containing the substring `select` (flagged as SQL injection), which silently broke extraction. Diagnosed it by bisecting query params, then switched to fetching full rows and subsetting columns client-side — identical output, no downtime.
+- **Recursive forecasting without data leakage.** Each predicted day is fed back as the lag feature for the next, so the 30-day horizon never peeks at future actuals.
+- **Deployed a "backend-required" app as a static site.** GitHub Pages can't run Postgres/Redis/Airflow, so a build script freezes the whole app — every page plus ~1,800 pre-rendered API responses — and injects a fetch shim, giving a fully interactive demo with zero hosting cost. ([live demo](https://yourrem.github.io/SF-Crime-Site/))
+
 ## Architecture
 
 ```
@@ -187,3 +199,7 @@ Both datasets from the [SF Open Data Portal](https://data.sfgov.org) via the Soc
 **Recursive forecast** — each predicted value is appended to the history before generating the next day's prediction, so lag features remain valid across the entire 30-day horizon without leaking future data.
 
 **Stable color hashing** — each neighborhood/category name is hashed to a stable index in a 10-color muted palette. The same name always maps to the same color across all charts.
+
+**WAF-safe extraction** — SF's edge WAF returns `403 Forbidden` for any query string containing `select` (SQL-injection heuristic), so extraction fetches full rows and subsets columns in Python rather than via SODA's `$select` param.
+
+**Static snapshot for hosting** — `scripts/build_static.py` captures every page and every UI-reachable API response into `docs/`, then injects a `fetch` shim that maps `/api/...` calls to the pre-rendered JSON. The result is a fully interactive demo on GitHub Pages with no backend. The filename-key function is implemented identically in Python and JS to keep the two sides in sync.
